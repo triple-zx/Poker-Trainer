@@ -4,3 +4,4 @@ release/
 .native/
 native-result.json
 tmp_log.txt
+result.json

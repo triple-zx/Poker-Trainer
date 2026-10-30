@@ -1,3 +1,15 @@
+diff --git a/include/compairer/Dic5Compairer.h b/include/compairer/Dic5Compairer.h
+index 8a0fb21..9a2c539 100644
+--- a/include/compairer/Dic5Compairer.h
++++ b/include/compairer/Dic5Compairer.h
+@@ -31,6 +31,7 @@ public:
+ 
+ 
+ private:
++    bool use_direct = false;
+     //unordered_map<set<string>,int> card2rank;
+     unordered_map<uint64_t,int> cardslong2rank;
+     int getRank(vector<Card> cards);
 diff --git a/include/ranges/RiverRangeManager.h b/include/ranges/RiverRangeManager.h
 index dfca70e..17c8c5b 100644
 --- a/include/ranges/RiverRangeManager.h
@@ -66,6 +78,37 @@ index 3bcfcf2..07ebf02 100644
          queue_.push(item);
      }
  };
+diff --git a/src/compairer/Dic5Compairer.cpp b/src/compairer/Dic5Compairer.cpp
+index 665d359..671b369 100644
+--- a/src/compairer/Dic5Compairer.cpp
++++ b/src/compairer/Dic5Compairer.cpp
+@@ -5,9 +5,18 @@
+ #include "compairer/Dic5Compairer.h"
+ 
+ #include <utility>
++#include <cstdlib>
++#include "HoldemEvaluator.h"
+ 
+ 
+ Dic5Compairer::Dic5Compairer(string dic_dir,int lines):Compairer(std::move(dic_dir),lines){
++    const char* table_mode = std::getenv("POKER_USE_TABLE_EVALUATOR");
++    use_direct = !table_mode || std::string(table_mode) != "1";
++    if (use_direct) {
++        if (this->dic_dir.find("shortdeck") != std::string::npos)
++            throw std::runtime_error("Direct evaluator supports standard Holdem only");
++        return;
++    }
+     ifstream infile(this->dic_dir);
+     string line;
+     progressbar bar(lines / 1000);
+@@ -120,6 +129,7 @@ int Dic5Compairer::getRank(vector<Card> cards) {
+ }
+ 
+ int Dic5Compairer::getRank(vector<int> cards) {
++    if (use_direct) return holdem::evaluate(cards);
+     Combinations<int> comb_cards(std::move(cards),5);
+     int min_rank = numeric_limits<int>::max();
+     for (const vector<int>& one_comb : comb_cards)
 diff --git a/src/ranges/RiverRangeManager.cpp b/src/ranges/RiverRangeManager.cpp
 index b8796c9..c4f5a0e 100644
 --- a/src/ranges/RiverRangeManager.cpp
