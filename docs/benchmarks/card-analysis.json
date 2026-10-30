@@ -1,0 +1,93 @@
+{
+  "nativeSolves": 0,
+  "reports": [
+    {
+      "file": ".native/full-sized-scenario.json",
+      "profile": "baseline",
+      "path": "root/a:CHECK/a:CHECK",
+      "street": "turn",
+      "cards": 47,
+      "positiveCards": 47,
+      "probabilityMass": 1.0000000000000004,
+      "heroEquity": 0.3641444041863887,
+      "comparisonWallMs": 30.47919999999999
+    },
+    {
+      "file": ".native/full-sized-scenario.json",
+      "profile": "baseline",
+      "path": "root/a:CHECK/a:CHECK/c:2d/a:CHECK/a:CHECK",
+      "street": "river",
+      "cards": 46,
+      "positiveCards": 46,
+      "probabilityMass": 0.9999999999999994,
+      "heroEquity": 2.8434637483142193e-23,
+      "comparisonWallMs": 2.8472999999999047
+    },
+    {
+      "file": ".native/full-sized-scenario.json",
+      "profile": "model",
+      "path": "root/a:CHECK/a:CHECK",
+      "street": "turn",
+      "cards": 47,
+      "positiveCards": 47,
+      "probabilityMass": 1.0000000000000002,
+      "heroEquity": 0.48787878787878813,
+      "comparisonWallMs": 26.470800000000054
+    },
+    {
+      "file": ".native/full-sized-scenario.json",
+      "profile": "model",
+      "path": "root/a:CHECK/a:CHECK/c:2d/a:BET:1.5/a:CALL",
+      "street": "river",
+      "cards": 46,
+      "positiveCards": 46,
+      "probabilityMass": 0.9999999999999994,
+      "heroEquity": 0.477272727272727,
+      "comparisonWallMs": 2.616999999999962
+    },
+    {
+      "file": ".native/full-hand-ip-v3.json",
+      "profile": "baseline",
+      "path": "root/a:CHECK/a:CHECK",
+      "street": "turn",
+      "cards": 45,
+      "positiveCards": 45,
+      "probabilityMass": 1.0000000000000004,
+      "heroEquity": 0.9121212121212129,
+      "comparisonWallMs": 13.663900000000012
+    },
+    {
+      "file": ".native/full-hand-ip-v3.json",
+      "profile": "baseline",
+      "path": "root/a:CHECK/a:CHECK/c:2d/a:CHECK/a:CHECK",
+      "street": "river",
+      "cards": 44,
+      "positiveCards": 44,
+      "probabilityMass": 0.9999999999999994,
+      "heroEquity": 0.954545454545454,
+      "comparisonWallMs": 1.626700000000028
+    },
+    {
+      "file": ".native/full-hand-ip-v3.json",
+      "profile": "model",
+      "path": "root/a:CHECK/a:BET:5/a:CALL",
+      "street": "turn",
+      "cards": 45,
+      "positiveCards": 45,
+      "probabilityMass": 1.0000000000000004,
+      "heroEquity": 0.9121212121212129,
+      "comparisonWallMs": 13.416000000000167
+    },
+    {
+      "file": ".native/full-hand-ip-v3.json",
+      "profile": "model",
+      "path": "root/a:CHECK/a:BET:5/a:CALL/c:Qh/a:CHECK/a:CHECK",
+      "street": "river",
+      "cards": 44,
+      "positiveCards": 44,
+      "probabilityMass": 0.9999999999999994,
+      "heroEquity": 0,
+      "comparisonWallMs": 1.5016999999998006
+    }
+  ]
+}

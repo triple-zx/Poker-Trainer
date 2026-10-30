@@ -149,19 +149,23 @@ export function nextStreet(state, card) {
 }
 export const streetName = (board) =>
   ["Flop", "Turn", "River"][board.length - 3];
-export function fullActionLabel(action, state, s) {
+export function fullActionLabel(action, state, s, t = (en) => en) {
   const p = state.player;
   if (action.kind === "CALL")
-    return "Call " + round(state.spent[1 - p] - state.spent[p]) + " bb";
-  if (action.kind === "CHECK") return "Check";
-  if (action.kind === "FOLD") return "Fold";
+    return (
+      t("Call ", "跟注 ") +
+      round(state.spent[1 - p] - state.spent[p]) +
+      t(" bb", " 大盲")
+    );
+  if (action.kind === "CHECK") return t("Check", "过牌");
+  if (action.kind === "FOLD") return t("Fold", "弃牌");
   const allin = Math.abs(state.spent[p] + action.amount - s.stack) < EPS;
   return (
     (action.kind === "RAISE"
-      ? "Raise to " + round(state.street[p] + action.amount)
-      : "Bet " + action.amount) +
-    " bb" +
-    (allin ? " · all-in" : "")
+      ? t("Raise to ", "加注至 ") + round(state.street[p] + action.amount)
+      : t("Bet ", "下注 ") + action.amount) +
+    t(" bb", " 大盲") +
+    (allin ? t(" · all-in", " · 全下") : "")
   );
 }
 
