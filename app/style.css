@@ -469,3 +469,15 @@ details[open] summary {
   top: 0;
   background: #17271f;
 }
+.scenario-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+.scenario-choice input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #d2e898;
+}

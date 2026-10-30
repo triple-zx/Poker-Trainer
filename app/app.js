@@ -14,6 +14,7 @@ import {
   tendencySummary,
 } from "./tendency-ui.js";
 import { solutionStore } from "./solution-store.js";
+import { flopReportPanel } from "./flop-report-ui.js";
 import {
   sameScenario,
   scenarioPackage,
@@ -44,6 +45,13 @@ const $ = (s) => document.querySelector(s),
   form = $("#form"),
   key = "poker-trainer-v1";
 let library = {};
+const flopViewState = {
+  profile: "model",
+  weightMode: "equal",
+  selected: new Set(),
+  weights: new Map(),
+};
+let disposeFlopReport = () => {};
 let lang = "en",
   result = null,
   checkpoint = [],
@@ -817,6 +825,13 @@ function matrix(range) {
   );
 }
 function analysis() {
+  disposeFlopReport();
+  disposeFlopReport = flopReportPanel(
+    $("#flop-comparison"),
+    library,
+    flopViewState,
+    t,
+  );
   const el = $("#analysis-content");
   if (!result) {
     el.textContent = t(
@@ -1064,6 +1079,7 @@ $("#save-scenario").onclick = async () => {
       },
     };
     localStorage.setItem(key + "-library", JSON.stringify(library));
+    flopViewState.report = null;
     refreshLibrary();
     $("#library").value = scenario.name;
     msg("Saving the complete solution…", "正在保存完整解…");

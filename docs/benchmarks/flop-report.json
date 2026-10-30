@@ -1,0 +1,109 @@
+{
+  "nativeSolves": 2,
+  "measurements": [
+    {
+      "name": "Ace-high · flop comparison",
+      "flop": "As7d2c",
+      "nodes": 18234,
+      "gap": 5.512791281248042e-7,
+      "nativeWallMs": 2235.6987
+    },
+    {
+      "name": "Jack-high · flop comparison",
+      "flop": "Js7d2c",
+      "nodes": 18234,
+      "gap": 0,
+      "nativeWallMs": 2217.9826000000003
+    }
+  ],
+  "reports": [
+    {
+      "profile": "baseline",
+      "weightMode": "equal",
+      "wallMs": 186.3076000000001,
+      "heroEquity": 0.5797979797979795,
+      "modelEV": 2.242424242424242,
+      "actions": [
+        {
+          "kind": "CHECK",
+          "frequency": 0.0000015504045883686367
+        },
+        {
+          "kind": "BET",
+          "amount": 1,
+          "frequency": 0.9999984495954116
+        }
+      ],
+      "shares": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "profile": "baseline",
+      "weightMode": "custom",
+      "wallMs": 55.51940000000013,
+      "heroEquity": 0.41363636363636347,
+      "modelEV": 1.3636363636363638,
+      "actions": [
+        {
+          "kind": "CHECK",
+          "frequency": 7.752022941843184e-7
+        },
+        {
+          "kind": "BET",
+          "amount": 1,
+          "frequency": 0.9999992247977059
+        }
+      ],
+      "shares": [
+        0.25,
+        0.75
+      ]
+    },
+    {
+      "profile": "model",
+      "weightMode": "equal",
+      "wallMs": 46.849199999999655,
+      "heroEquity": 0.5797979797979795,
+      "modelEV": 2.242424242424242,
+      "actions": [
+        {
+          "kind": "CHECK",
+          "frequency": 0
+        },
+        {
+          "kind": "BET",
+          "amount": 1,
+          "frequency": 1
+        }
+      ],
+      "shares": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "profile": "model",
+      "weightMode": "custom",
+      "wallMs": 38.024500000000444,
+      "heroEquity": 0.41363636363636347,
+      "modelEV": 1.3636363636363638,
+      "actions": [
+        {
+          "kind": "CHECK",
+          "frequency": 0
+        },
+        {
+          "kind": "BET",
+          "amount": 1,
+          "frequency": 1
+        }
+      ],
+      "shares": [
+        0.25,
+        0.75
+      ]
+    }
+  ]
+}
