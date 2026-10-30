@@ -57,7 +57,8 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "artifactName": "Poker-Trainer-${version}-${arch}-Setup.${ext}"
     },
     "mac": {
       "target": [
@@ -73,6 +74,9 @@
       ],
       "category": "Education"
     },
-    "artifactName": "Poker-Trainer-${version}-${os}-${arch}.${ext}"
+    "artifactName": "Poker-Trainer-${version}-${os}-${arch}.${ext}",
+    "portable": {
+      "artifactName": "Poker-Trainer-${version}-${arch}-Portable.${ext}"
+    }
   }
 }
