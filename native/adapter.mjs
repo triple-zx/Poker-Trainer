@@ -16,6 +16,7 @@ import { betAmounts } from "../app/sizing-config.js";
 import { validateFull } from "../app/full-game.js";
 import { fullCandidates } from "../app/full-sizing.js";
 import { firstPlayer } from "../app/positions.js";
+import { assertFullCapacity } from "../app/full-resources.js";
 const bundled = fileURLToPath(
   new URL("../.native/TexasSolver/", import.meta.url),
 );
@@ -187,6 +188,7 @@ export function extractSized(data, s) {
   };
 }
 export async function run(s, signal) {
+  if (s.game === "full") assertFullCapacity(s);
   const input = commands(s);
   if (!(await available()))
     throw Error("Native solver is not installed. See native/README.md.");
