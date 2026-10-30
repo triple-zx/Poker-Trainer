@@ -1,0 +1,12 @@
+{
+  "name": "poker-trainer-design",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Executable contract specifications for Poker Trainer; not a playable application",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test tests/contracts.test.mjs",
+    "check": "node scripts/check-design.mjs"
+  }
+}
