@@ -1,7 +1,10 @@
+import { practiceGroups, recordActions } from "./analytics.js";
+import { equityReport, frequencyReport, replayHand } from "./analytics-ui.js";
 import { solveSized, betAmounts } from "./sizing.js";
 import { actionLabel, sizingReport } from "./sizing-ui.js";
 import {
   DEFAULT,
+  cards,
   validate,
   solve,
   sample,
@@ -99,7 +102,7 @@ function save() {
   }
 }
 function show(tab) {
-  if (hand && tab === "analysis") {
+  if (hand && (tab === "analysis" || tab === "history")) {
     msg("Finish the hand before opening analysis.", "请先完成本手再查看分析。");
     return;
   }
@@ -120,7 +123,7 @@ function translate() {
     .querySelectorAll("[data-en]")
     .forEach((e) => (e.textContent = e.dataset[lang]));
   $("#language").textContent = lang === "en" ? "中文" : "English";
-  refreshActions();
+  refreshTarget();
   analysis();
   history();
 }
@@ -333,8 +336,10 @@ $("#deal").onclick = () => {
   const target = $("#target").value;
   let sampling = g;
   if (target !== "") {
-    const i = Number(target),
-      pairs = g.pairs.filter((p) => p.i === i),
+    const indices = target.includes(":")
+        ? practiceGroups(g).find((group) => group.key === target)?.indices || []
+        : [Number(target)],
+      pairs = g.pairs.filter((p) => indices.includes(p.i)),
       mass = pairs.reduce((a, p) => a + p.weight, 0);
     if (!mass) {
       msg("Selected hand has no legal deals.", "所选手牌没有合法发牌。");
@@ -345,7 +350,11 @@ $("#deal").onclick = () => {
       pairs: pairs.map((p) => ({ ...p, weight: p.weight / mass })),
     };
   }
-  hand = { ...sample(sampling), targeted: target !== "" };
+  hand = {
+    ...sample(sampling),
+    targeted: target !== "",
+    practiceTarget: target,
+  };
   $("#sampling-note").textContent = hand.targeted
     ? t(
         "Targeted practice: this changes the configured sampling distribution.",
@@ -399,7 +408,8 @@ function act(action) {
           ? t("You win", "你获胜")
           : t("Opponent wins", "对手获胜");
   $("#opponent").innerHTML = cardHTML(v.cards);
-  $("#board").innerHTML = cardHTML(board);
+  const revealedBoard = action > 0 && !called ? g.board : board;
+  $("#board").innerHTML = cardHTML(revealedBoard);
   const feedback = result.sized
     ? `${outcome}. ${t("EV loss", "EV 损失")}: ${loss.toFixed(4)} bb · ${actionLabel(result, action, t)} EV ${ev[action].toFixed(4)} bb · ${t("Target frequency", "目标频率")} ${(100 * result.adjusted[hand.i][action]).toFixed(1)}%`
     : `${outcome}. ${t("EV loss", "EV 损失")}: ${loss.toFixed(3)} bb. ${t("Check / shove EV", "过牌 / 全下 EV")}: ${ev[0].toFixed(3)} / ${ev[1].toFixed(3)} bb. ${t("Target shove frequency", "目标全下频率")}: ${(result.adjusted[hand.i] * 100).toFixed(1)}%.`;
@@ -410,7 +420,7 @@ function act(action) {
     config: structuredClone(s),
     hero: h.label,
     villain: v.label,
-    board: board.map(cardName).join(" "),
+    board: revealedBoard.map(cardName).join(" "),
     action,
     actionLabel: actionLabel(result, action, t),
     loss,
@@ -418,6 +428,9 @@ function act(action) {
     target: result.adjusted[hand.i],
     bookmark: false,
     targeted: hand.targeted,
+    practiceTarget: hand.practiceTarget,
+    actions: result.sized ? result.actions : [0, s.stack],
+    called,
   });
   records = records.slice(0, 1000);
   hand = null;
@@ -472,23 +485,26 @@ function analysis() {
   const s = result.scenario,
     g = validate(s);
   if (result.sized) {
-    el.innerHTML = sizingReport(result, g, t, esc, matrix);
+    el.innerHTML =
+      sizingReport(result, g, t, esc, matrix) +
+      equityReport(g, result.eq, t, esc);
     return;
   }
   el.innerHTML = `<div class="report"><p class="eyebrow">${t("COMPUTATION REPORT", "计算报告")}</p><h2>${esc(s.name)}</h2><p>${t("Full runout enumeration within the restricted game", "受限游戏内完整枚举发牌")}: ${result.coverage.toLocaleString()} · ${s.iterations.toLocaleString()} ${t("iteration budget", "迭代预算")} · ${esc(result.engine)}</p><p class="metric">${result.gap.toFixed(5)} bb</p><p>${t("Sum of unilateral deviation incentives at the average baseline. With zero rake this is a Nash gap; with rake it is a profile diagnostic, not a convergence guarantee.", "平均基线策略下，双方单方面偏移激励之和。无抽水时为纳什差距；有抽水时仅为策略诊断，不保证收敛。")}</p><p>${t("Runout sampling error: zero. Bet restriction loss: unknown. No robustness bound for deviation blending.", "发牌采样误差为零。下注限制损失未知。策略混合无稳健性界限。")}</p><div class="scroll"><table><thead><tr><th>${t("Hero combo · weight", "玩家组合 · 权重")}</th><th>${t("Baseline shove", "基线全下")}</th><th>${t("Adjusted shove", "调整后全下")}</th><th>${t("Check EV", "过牌 EV")}</th><th>${t("Shove EV", "全下 EV")}</th></tr></thead><tbody>${g.hero.map((h, i) => `<tr><td>${h.label} · ${h.weight}</td><td>${(100 * result.baseline[i]).toFixed(1)}%</td><td>${(100 * result.adjusted[i]).toFixed(1)}%</td><td>${result.ev[i][0].toFixed(3)}</td><td>${result.ev[i][1].toFixed(3)}</td></tr>`).join("")}</tbody></table></div>${matrix(g.hero)}<p class="hint">${t("Highlighted cells contain configured combinations, not full hand classes. Weights are shown in the tables.", "高亮单元格包含已配置组合，并非整个手牌类别。权重见表格。")}</p><table><thead><tr><th>${t("Opponent combo · weight", "对手组合 · 权重")}</th><th>${t("Baseline call", "基线跟注")}</th><th>${t("Modeled call", "模型跟注")}</th></tr></thead><tbody>${g.villain.map((h, i) => `<tr><td>${h.label} · ${h.weight}</td><td>${(100 * result.calls[i]).toFixed(1)}%</td><td>${(100 * result.model[i]).toFixed(1)}%</td></tr>`).join("")}</tbody></table>${matrix(g.villain)}</div>`;
+  el.insertAdjacentHTML("beforeend", equityReport(g, result.eq, t, esc));
 }
 function history() {
   const loss = records.reduce((a, r) => a + r.loss, 0);
   $("#stats").textContent =
     `${records.length} ${t("hands", "手")} · ${t("Mean EV loss", "平均 EV 损失")} ${records.length ? (loss / records.length).toFixed(3) : "—"} bb · ${t("Observed bet rate (across recorded contexts)", "已记录场景下注率")} ${records.length ? ((100 * records.filter((r) => r.action > 0).length) / records.length).toFixed(1) : "—"}%`;
   const el = $("#records");
-  el.replaceChildren();
+  el.innerHTML = frequencyReport(records, t, esc);
   records.forEach((r, i) => {
     if (filter && r.loss < 0.01 && !r.bookmark) return;
     const div = document.createElement("div");
     div.className = "record";
     const text = document.createElement("p");
-    text.textContent = `${r.scenario} · ${r.hero} / ${r.villain} · ${r.board} · ${r.actionLabel || (r.action ? t("Shove", "全下") : t("Check", "过牌"))} · ${r.loss.toFixed(3)} bb`;
+    text.textContent = `${r.scenario} · ${r.hero} / ${r.villain} · ${r.board} · ${r.action ? t("Bet", "下注") + " " + recordActions(r)[r.action] + " bb" : t("Check", "过牌")} · ${r.loss.toFixed(3)} bb`;
     const button = document.createElement("button");
     button.textContent = r.bookmark ? "★" : "☆";
     button.setAttribute("aria-label", t("Toggle bookmark", "切换书签"));
@@ -500,24 +516,7 @@ function history() {
     const replay = document.createElement("button");
     replay.textContent = t("Replay details", "复盘详情");
     replay.onclick = () => {
-      const detail = document.createElement("p");
-      detail.textContent = JSON.stringify(
-        {
-          scenario: r.config,
-          board: r.board,
-          hero: r.hero,
-          opponent: r.villain,
-          action: r.actionLabel || (r.action ? "shove" : "check"),
-          actionEV: r.ev,
-          loss: r.loss,
-          targetShove: r.target,
-          targeted: !!r.targeted,
-        },
-        null,
-        2,
-      );
-      detail.className = "replay";
-      div.append(detail);
+      replayHand(div, r, t, cardHTML, cards);
       replay.disabled = true;
     };
     div.append(button, replay, text);
@@ -586,6 +585,7 @@ fetch("/api/engine")
 function refreshTarget() {
   refreshActions();
   const select = $("#target");
+  const previous = select.value;
   select.replaceChildren();
   const all = document.createElement("option");
   all.value = "";
@@ -601,6 +601,15 @@ function refreshTarget() {
       o.textContent = h.label;
       select.append(o);
     });
+  if (result)
+    for (const group of practiceGroups(validate(result.scenario))) {
+      const option = document.createElement("option");
+      option.value = group.key;
+      option.textContent = t(...group.label);
+      select.append(option);
+    }
+  if ([...select.options].some((o) => o.value === previous))
+    select.value = previous;
 }
 function refreshLibrary() {
   const select = $("#library");

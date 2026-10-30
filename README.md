@@ -14,13 +14,13 @@ Open http://127.0.0.1:4173. No package installation is needed. To check the code
 
 ## Current milestone: bounded flop laboratory
 
-Set a fixed flop, exact weighted ranges (up to 12 combinations each), pot, effective stack, and opponent calling tendencies. Precompute, then practice repeated hands. Inspect baseline versus modeled play, action EVs, both range matrices, bookmarks, and the decision journal. The journal and latest solution stay in this browser's local storage. Export scenarios for portable backups; exports exclude personal training history. Imported equity data is recomputed before use.
+Set a fixed flop, exact weighted ranges (up to 12 combinations each), pot, effective stack, and opponent calling tendencies. Precompute, then practice repeated hands. Inspect baseline versus modeled play, action EVs, both range matrices, weighted equities, draw composition, card removal, bookmarks, and the decision journal. Practice selected combinations, made hands or draws, replay completed hands, and compare repeated action frequencies with their targets. The journal and latest solution stay in this browser's local storage. Export scenarios for portable backups; exports exclude personal training history. Imported equity data is recomputed before use.
 
 The supported game is deliberately restricted: hero acts first and chooses **check down to showdown** or **bet a precomputed size**; the opponent chooses **call/fold** facing a bet. There is no subsequent betting. Every compatible hand pair and all 990 legal unordered turn–river runouts per pair are enumerated. The action restriction is explicit, and its loss relative to full no-limit Hold'em is unknown.
 
 The browser reference engine supports a stated rake convention (percentage of terminal pot, capped, including folds). The optional **TexasSolver C++ engine** supports zero rake. See [native setup and validation](native/README.md). Every native baseline is evaluated independently using exact runouts, and its measured deviation incentive is shown.
 
-This is an engineering milestone, **not completion of the entire requirements baseline**. General street-by-street betting, full preflop libraries/solving, broad scenario aggregation, category drills, and interactive replay remain under development. See [implementation and acceptance status](docs/implementation.md) and the unchanged [requirements](docs/requirements.md).
+This is an engineering milestone, **not completion of the entire requirements baseline**. General street-by-street betting, full preflop libraries/solving, broad scenario aggregation, and full multi-street play remain under development. See [implementation and acceptance status](docs/implementation.md) and the unchanged [requirements](docs/requirements.md).
 
 ## Use
 
