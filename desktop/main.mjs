@@ -46,7 +46,7 @@ else {
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin" || smoke) app.quit();
   });
-  await app.whenReady();
+  app.whenReady().then(async () => {
   const nativeRoot = path.join(process.resourcesPath, "native-engine"),
     executable = path.join(
       nativeRoot,
