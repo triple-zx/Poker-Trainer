@@ -16,7 +16,7 @@ export const binary =
   process.env.TEXASSOLVER_BIN ||
   path.join(
     sibling,
-    "build",
+    existsSync(path.join(sibling, "trainer-build")) ? "trainer-build" : "build",
     process.platform === "win32" ? "console_solver.exe" : "console_solver",
   );
 export const resources =

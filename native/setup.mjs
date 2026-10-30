@@ -60,18 +60,44 @@ if (!exists) {
     );
   console.log("Reusing the matching native source.");
 }
+const buildDirectory = path.join(source, "trainer-build");
+const platformFlags = [];
+if (process.platform === "darwin") {
+  let prefix = process.env.LIBOMP_PREFIX;
+  if (!prefix) {
+    const found = spawnSync("brew", ["--prefix", "libomp"], {
+      encoding: "utf8",
+      windowsHide: true,
+    });
+    if (found.status === 0) prefix = found.stdout.trim();
+  }
+  if (!prefix)
+    throw Error(
+      "Install libomp with Homebrew, or set LIBOMP_PREFIX to its installation folder",
+    );
+  await access(path.join(prefix, "include", "omp.h"));
+  await access(path.join(prefix, "lib", "libomp.dylib"));
+  platformFlags.push(
+    "-DOpenMP_CXX_FLAGS=-Xpreprocessor -fopenmp",
+    "-DOpenMP_CXX_LIB_NAMES=omp",
+    `-DOpenMP_CXX_INCLUDE_DIR=${path.join(prefix, "include")}`,
+    `-DOpenMP_omp_LIBRARY=${path.join(prefix, "lib", "libomp.dylib")}`,
+  );
+}
 command("cmake", [
   "-S",
-  source,
+  path.join(root, "native"),
   "-B",
-  path.join(source, "build"),
+  buildDirectory,
+  `-DTEXASSOLVER_SOURCE=${source.replaceAll("\\", "/")}`,
   "-DCMAKE_BUILD_TYPE=Release",
   "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+  ...platformFlags,
   ...(process.platform === "win32" ? ["-G", "MinGW Makefiles"] : []),
 ]);
 command("cmake", [
   "--build",
-  path.join(source, "build"),
+  buildDirectory,
   "--target",
   "console_solver",
   "--parallel",
