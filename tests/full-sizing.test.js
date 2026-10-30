@@ -112,8 +112,8 @@ test("deep candidates extend configured sizes and native commands use exactly th
   );
 });
 
-function fixture() {
-  const g = validate(s),
+function fixture(config = s) {
+  const g = validate(config),
     ranges = [g.hero, g.villain];
   let nodes = 0;
   function build(state) {
@@ -140,10 +140,10 @@ function fixture() {
         ),
       };
     const gap = state.spent[1 - state.player] - state.spent[state.player],
-      remaining = s.stack - state.spent[state.player];
+      remaining = config.stack - state.spent[state.player];
     const actions =
       gap > 0 ? [{ kind: "CALL" }, { kind: "FOLD" }] : [{ kind: "CHECK" }];
-    const pot = s.pot + 2 * Math.max(...state.spent);
+    const pot = config.pot + 2 * Math.max(...state.spent);
     const amounts = [
       ...new Set([
         ...(gap > 0 ? [100] : [25, 50]).map((p) =>
@@ -164,16 +164,17 @@ function fixture() {
       ...state,
       actions,
       policy,
-      children: actions.map((a) => build(transition(s, state, a))),
+      children: actions.map((a) => build(transition(config, state, a))),
     };
   }
-  const root = build(initialState(s));
+  const root = build(initialState(config));
   return { root, nodes };
 }
 // Separate per-hero-hand traversal checks the value of the stored, fixed menus.
 // Hidden opponent probabilities are summed before each hero maximization.
 function frozenValue(result) {
-  const g = validate(s),
+  const s = result.scenario,
+    g = validate(s),
     cache = new Map();
   return g.hero.reduce((total, h, i) => {
     function walk(node, weights) {
@@ -223,6 +224,21 @@ function frozenValue(result) {
     return total + walk(result.root, weights);
   }, 0);
 }
+
+test("in-position sizing restricts hero responses and matches independent fixed-menu EV", () => {
+  const config = { ...s, heroPosition: "ip" };
+  const result = evaluateFull(fixture(config), config);
+  assert.equal(result.root.player, 1);
+  assert.equal(result.root.activeActions, undefined);
+  assert.ok(Math.abs(frozenValue(result) - result.selection.value) < 1e-9);
+  const restored = restorePackage(solutionPackage(result)).result;
+  assert.equal(restored.root.player, 1);
+  assert.deepEqual(restored.selection, result.selection);
+  assert.deepEqual(
+    restored.root.children[0].adjusted,
+    result.root.children[0].adjusted,
+  );
+});
 test("full-tree sizing is independently valued, keeps all practice branches and survives sharing", () => {
   const tree = fixture(),
     r = evaluateFull(tree, s),

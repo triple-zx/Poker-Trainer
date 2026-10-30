@@ -1,0 +1,10 @@
+{
+  "heroPosition": "ip",
+  "nodes": 114636,
+  "decisions": 148,
+  "hands": 100,
+  "importedSolution": true,
+  "gap": 0.000017715437582666027,
+  "nativePercent": 0.00009033203,
+  "wallMs": 11188.763799999999
+}

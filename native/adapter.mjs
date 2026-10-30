@@ -15,6 +15,7 @@ import { validate, cardName } from "../app/engine.js";
 import { betAmounts } from "../app/sizing-config.js";
 import { validateFull } from "../app/full-game.js";
 import { fullCandidates } from "../app/full-sizing.js";
+import { firstPlayer } from "../app/positions.js";
 const bundled = fileURLToPath(
   new URL("../.native/TexasSolver/", import.meta.url),
 );
@@ -45,7 +46,9 @@ export function commands(s) {
   if (s.game === "full") validateFull(s);
   const scale = 1000,
     sizes = betAmounts(s),
-    betting = s.game === "full" ? fullCandidates(s) : null;
+    betting = s.game === "full" ? fullCandidates(s) : null,
+    ranges = [g.hero, g.villain],
+    oop = firstPlayer(s);
   if (
     [s.pot, s.stack].some(
       (x) => Math.abs(x * scale - Math.round(x * scale)) > 1e-6,
@@ -62,8 +65,8 @@ export function commands(s) {
     `set_pot ${s.pot * scale}`,
     `set_effective_stack ${s.stack * scale}`,
     `set_board ${g.board.map(cardName).join(",")}`,
-    `set_range_oop ${g.hero.map((h) => h.label + ":" + h.weight).join(",")}`,
-    `set_range_ip ${g.villain.map((h) => h.label + ":" + h.weight).join(",")}`,
+    `set_range_oop ${ranges[oop].map((h) => h.label + ":" + h.weight).join(",")}`,
+    `set_range_ip ${ranges[1 - oop].map((h) => h.label + ":" + h.weight).join(",")}`,
     ...(s.game === "full"
       ? ["oop", "ip"].flatMap((player) =>
           ["flop", "turn", "river"].flatMap((street) => [
