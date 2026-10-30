@@ -46,9 +46,15 @@ test("release packaging requires both platforms and hashes only expected version
       createHash("sha256").update(payload).digest("hex") + "  " + names[0],
     ),
   );
+  await rm(path.join(directory, "SHA256SUMS.txt"));
   await writeFile(
     path.join(directory, "Poker-Trainer-0.2.0-x64-Setup.exe"),
     payload,
   );
-  assert.notEqual(run().status, 0);
+  const mismatch = run();
+  assert.notEqual(mismatch.status, 0);
+  assert.match(
+    mismatch.stderr,
+    /Unexpected release asset Poker-Trainer-0\.2\.0/,
+  );
 });
