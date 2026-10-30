@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validate, cardName } from "../app/engine.js";
+import { betAmounts } from "../app/sizing-config.js";
 const bundled = fileURLToPath(
   new URL("../.native/TexasSolver/", import.meta.url),
 );
@@ -31,18 +32,38 @@ export async function available() {
 }
 export function commands(s) {
   const g = validate(s);
+  const scale = 1000,
+    sizes = betAmounts(s);
+  if (
+    [s.pot, s.stack].some(
+      (x) => Math.abs(x * scale - Math.round(x * scale)) > 1e-6,
+    )
+  )
+    throw Error(
+      "Native pot and stack support up to three decimal places in bb",
+    );
   if (s.rake > 0 && s.cap > 0)
     throw Error(
       "TexasSolver adapter supports zero rake only. Use the reference engine for rake.",
     );
   return [
-    `set_pot ${s.pot}`,
-    `set_effective_stack ${s.stack}`,
+    `set_pot ${s.pot * scale}`,
+    `set_effective_stack ${s.stack * scale}`,
     `set_board ${g.board.map(cardName).join(",")}`,
     `set_range_oop ${g.hero.map((h) => h.label + ":" + h.weight).join(",")}`,
     `set_range_ip ${g.villain.map((h) => h.label + ":" + h.weight).join(",")}`,
     "set_bet_sizes oop,flop,allin",
-    "set_allin_threshold 1",
+    ...(s.sizing && sizes.some((x) => x < s.stack)
+      ? [
+          `set_bet_sizes oop,flop,bet,${sizes
+            .filter((x) => x < s.stack)
+            .map((x) => Number(((x / s.pot) * 100).toPrecision(12)))
+            .join(",")}`,
+        ]
+      : []),
+    // Upstream compares bet plus sunk commitment to effective stack. Disable
+    // automatic near-all-in substitution: the adapter already caps all sizes.
+    `set_allin_threshold ${2 + s.pot / s.stack}`,
     "build_tree",
     `set_thread_num ${Math.min(4, os.availableParallelism(), Math.max(1, Number(process.env.TEXASSOLVER_THREADS) || 1))}`,
     "set_accuracy 0.001",
@@ -56,6 +77,7 @@ export function commands(s) {
   ].join("\n");
 }
 export function extract(data, s) {
+  if (s.sizing) return extractSized(data, s);
   const g = validate(s),
     bet = data.actions?.find((a) => /^BET /.test(a)),
     child = data.childrens?.[bet];
@@ -63,7 +85,7 @@ export function extract(data, s) {
     !bet ||
     data.actions.length !== 2 ||
     !data.actions.includes("CHECK") ||
-    Math.abs(Number(bet.slice(4)) - s.stack) > 1e-5 ||
+    Math.abs(Number(bet.slice(4)) / 1000 - s.stack) > 1e-5 ||
     child?.actions?.length !== 2 ||
     !child.actions.includes("FOLD") ||
     !child.actions.includes("CALL")
@@ -84,6 +106,57 @@ export function extract(data, s) {
   return {
     baseline: g.hero.map((h) => read(data, h, bet)),
     calls: g.villain.map((h) => read(child, h, "CALL")),
+    engine: "TexasSolver (patched console)",
+  };
+}
+export function extractSized(data, s) {
+  const g = validate(s),
+    sizes = betAmounts(s),
+    actions = [
+      "CHECK",
+      ...sizes.map((size) =>
+        data.actions?.find(
+          (a) =>
+            a.startsWith("BET ") &&
+            Math.abs(Number(a.slice(4)) / 1000 - size) < 1e-5,
+        ),
+      ),
+    ];
+  if (
+    !data.actions?.includes("CHECK") ||
+    actions.some((a) => !a) ||
+    data.actions?.length !== actions.length
+  )
+    throw Error(
+      `Native sizes differ from configured sizes: expected ${sizes.join(", ")}; received ${(data.actions || []).join(", ")}`,
+    );
+  const read = (node, h, action) => {
+    const v =
+      node?.strategy?.strategy?.[h.label] ||
+      node?.strategy?.strategy?.[h.label.slice(2) + h.label.slice(0, 2)];
+    if (
+      !Array.isArray(v) ||
+      v.length !== node.actions.length ||
+      v.some((x) => !Number.isFinite(x) || x < 0 || x > 1) ||
+      Math.abs(v.reduce((a, b) => a + b, 0) - 1) > 1e-5
+    )
+      throw Error("Missing native strategy");
+    return v[node.actions.indexOf(action)];
+  };
+  const children = actions.slice(1).map((action) => {
+    const child = data.childrens?.[action];
+    if (
+      child?.actions?.length !== 2 ||
+      !child.actions.includes("CALL") ||
+      !child.actions.includes("FOLD")
+    )
+      throw Error("Unsupported continuation");
+    return child;
+  });
+  return {
+    sized: true,
+    baseline: g.hero.map((h) => actions.map((a) => read(data, h, a))),
+    calls: g.villain.map((h) => children.map((c) => read(c, h, "CALL"))),
     engine: "TexasSolver (patched console)",
   };
 }
