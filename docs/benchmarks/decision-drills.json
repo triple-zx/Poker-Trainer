@@ -1,0 +1,106 @@
+[
+  {
+    "file": ".native/full-sized-scenario.json",
+    "position": "oop",
+    "nodes": 229446,
+    "gap": 0.010176223057286826,
+    "nativeSolves": 0,
+    "decisions": 420,
+    "selected": [
+      {
+        "path": "root",
+        "action": 1,
+        "kind": "BET",
+        "street": 3,
+        "choices": 4
+      },
+      {
+        "path": "root/a:CHECK/a:CHECK/c:2d",
+        "action": 1,
+        "kind": "BET",
+        "street": 4,
+        "choices": 4
+      },
+      {
+        "path": "root/a:CHECK/a:CHECK/c:2d/a:CHECK/a:CHECK/c:2h",
+        "action": 1,
+        "kind": "BET",
+        "street": 5,
+        "choices": 4
+      },
+      {
+        "path": "root/a:CHECK/a:CHECK/c:2d/a:CHECK/a:CHECK/c:2h/a:CHECK/a:BET:1.5",
+        "action": 1,
+        "kind": "RAISE",
+        "street": 5,
+        "choices": 3
+      },
+      {
+        "path": "root/a:CHECK/a:CHECK/c:2d/a:CHECK/a:BET:1.5",
+        "action": 1,
+        "kind": "RAISE",
+        "street": 4,
+        "choices": 3
+      },
+      {
+        "path": "root/a:CHECK/a:BET:1.5",
+        "action": 1,
+        "kind": "RAISE",
+        "street": 3,
+        "choices": 3
+      }
+    ]
+  },
+  {
+    "file": ".native/full-hand-ip-v3.json",
+    "position": "ip",
+    "nodes": 114636,
+    "gap": 0.000017715437582666027,
+    "nativeSolves": 0,
+    "decisions": 360,
+    "selected": [
+      {
+        "path": "root/a:CHECK",
+        "action": 1,
+        "kind": "BET",
+        "street": 3,
+        "choices": 3
+      },
+      {
+        "path": "root/a:CHECK/a:CHECK/c:2d/a:CHECK",
+        "action": 1,
+        "kind": "BET",
+        "street": 4,
+        "choices": 3
+      },
+      {
+        "path": "root/a:CHECK/a:CHECK/c:2d/a:CHECK/a:CHECK/c:2h/a:CHECK",
+        "action": 1,
+        "kind": "BET",
+        "street": 5,
+        "choices": 3
+      },
+      {
+        "path": "root/a:CHECK/a:CHECK/c:2d/a:CHECK/a:CHECK/c:2h/a:BET:5",
+        "action": 1,
+        "kind": "RAISE",
+        "street": 5,
+        "choices": 3
+      },
+      {
+        "path": "root/a:CHECK/a:CHECK/c:2d/a:BET:5",
+        "action": 1,
+        "kind": "RAISE",
+        "street": 4,
+        "choices": 3
+      },
+      {
+        "path": "root/a:BET:5",
+        "action": 1,
+        "kind": "RAISE",
+        "street": 3,
+        "choices": 3
+      }
+    ]
+  }
+]
