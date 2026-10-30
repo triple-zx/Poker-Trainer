@@ -31,14 +31,15 @@ export function handFeatures(hole, board) {
     suits = [0, 0, 0, 0],
     ranks = new Set(known.map((c) => Math.floor(c / 4) + 2));
   known.forEach((c) => suits[c % 4]++);
-  const straightRanks = hasStraight(ranks)
-    ? []
-    : Array.from({ length: 13 }, (_, i) => i + 2).filter(
-        (r) => !ranks.has(r) && hasStraight(new Set([...ranks, r])),
-      );
+  const straightRanks =
+    board.length === 5 || hasStraight(ranks)
+      ? []
+      : Array.from({ length: 13 }, (_, i) => i + 2).filter(
+          (r) => !ranks.has(r) && hasStraight(new Set([...ranks, r])),
+        );
   return {
     category,
-    flushDraw: suits.includes(4),
+    flushDraw: board.length < 5 && suits.includes(4),
     backdoorFlush: board.length === 3 && suits.includes(3),
     straightOuts: straightRanks.reduce(
       (sum, r) =>
@@ -63,13 +64,26 @@ export function summarizeRange(g, eq, side = "hero") {
             0,
           ) / mass
         : null,
-      blocked = other.filter((v) => v.cards.some((c) => h.cards.includes(c)));
+      blocked = other.filter(
+        (v) => v.weight > 0 && v.cards.some((c) => h.cards.includes(c)),
+      ),
+      boardBlocked = h.cards.some((c) => g.board.includes(c));
     return {
       ...h,
-      ...handFeatures(h.cards, g.board),
+      ...(boardBlocked
+        ? {
+            category: null,
+            flushDraw: false,
+            backdoorFlush: false,
+            straightOuts: 0,
+          }
+        : handFeatures(h.cards, g.board)),
+      boardBlocked,
       mass,
       equity,
-      blockedWeight: blocked.reduce((sum, v) => sum + v.weight, 0) / totalOther,
+      blockedWeight: totalOther
+        ? blocked.reduce((sum, v) => sum + v.weight, 0) / totalOther
+        : 0,
       blockedCombos: blocked.map((v) => v.label),
       compatible: indices.map((k) => other[g.pairs[k][otherKey]].label),
     };
