@@ -2,7 +2,8 @@
   "nodes": 114636,
   "decisions": 148,
   "hands": 100,
+  "importedSolution": true,
   "gap": 0.00003853031678779928,
   "nativePercent": 0.00019042968,
-  "wallMs": 11802.3251
+  "wallMs": 24200.4195
 }

@@ -190,15 +190,26 @@ else {
           const ready = await contents.executeJavaScript(
             "document.title.includes('Poker Trainer') && typeof window.desktopSolver?.solve === 'function' && !!document.querySelector('#form') && document.querySelector('#engine').value === 'native'",
           );
+          // The private app origin must support File/Blob transfer to workers,
+          // otherwise a browser-only import test could miss a desktop failure.
+          const packageWorker =
+            await contents.executeJavaScript(`new Promise((resolve, reject) => {
+            const worker = new Worker('./package-worker.js', {type:'module'});
+            const timer = setTimeout(() => { worker.terminate(); reject(Error('Package worker timeout')); }, 10000);
+            worker.onerror = (event) => { clearTimeout(timer); worker.terminate(); reject(Error(event.message)); };
+            worker.onmessage = ({data}) => { clearTimeout(timer); worker.terminate(); resolve(data.type === 'imported' && data.result === null && data.scenario.flop === ${JSON.stringify(scenario.flop)}); };
+            worker.postMessage({type:'import', file:new File([${JSON.stringify(JSON.stringify({ schema: 1, scenario }))}], 'scenario.json', {type:'application/json'})});
+          })`);
           console.log(
             JSON.stringify({
               desktopLoaded: ready,
               native: await solver.available(),
               nativeSolve: verified.gap < 0.001,
+              packageWorker,
               url: contents.getURL(),
             }),
           );
-          app.exit(ready && verified.gap < 0.001 ? 0 : 1);
+          app.exit(ready && verified.gap < 0.001 && packageWorker ? 0 : 1);
         }
       }
       app.on("activate", () => {

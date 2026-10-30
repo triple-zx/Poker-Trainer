@@ -6,6 +6,7 @@ import { actionLabel, sizingReport } from "./sizing-ui.js";
 import { validateFull } from "./full-game.js";
 import { startFullTraining, fullReplay } from "./full-training-ui.js";
 import { solutionStore } from "./solution-store.js";
+import { sameScenario, PACKAGE_LIMIT } from "./solution-package.js";
 import { fullExplorer, fullFrequencyReport } from "./full-analysis-ui.js";
 import {
   DEFAULT,
@@ -35,6 +36,7 @@ let lang = "en",
   controller = null,
   runId = 0;
 let fullTraining = null;
+let packageJob = null;
 const t = (en, zh) => (lang === "en" ? en : zh);
 const msg = (en, zh = en) => ($("#status").textContent = t(en, zh));
 function read() {
@@ -89,6 +91,17 @@ function read() {
   return s;
 }
 function fill(s) {
+  const iterations = form.elements.iterations;
+  if (
+    !Array.from(iterations.options).some(
+      (o) => Number(o.value) === s.iterations,
+    )
+  ) {
+    const option = document.createElement("option");
+    option.value = String(s.iterations);
+    option.textContent = Number(s.iterations).toLocaleString();
+    iterations.append(option);
+  }
   form.elements.game.value = s.game || "bounded";
   for (const street of ["flop", "turn", "river"]) {
     form.elements[street + "Bets"].value = (
@@ -273,6 +286,10 @@ function stop() {
   controller = null;
   worker?.terminate();
   worker = null;
+  packageJob = null;
+  $("#export-solution").disabled = !result?.full;
+  $("#import").disabled = false;
+  $("#deal").disabled = false;
   $("#compute").disabled = false;
   $("#pause").disabled = true;
   $("#resume").disabled = !jobScenario || !!result;
@@ -294,6 +311,14 @@ form.onsubmit = (e) => {
   }
 };
 $("#pause").onclick = () => {
+  if (packageJob) {
+    stop();
+    msg(
+      "Package operation cancelled. The previous scenario is unchanged.",
+      "已取消文件操作，原场景未更改。",
+    );
+    return;
+  }
   stop();
   save();
   msg(
@@ -331,13 +356,17 @@ form.addEventListener("input", (e) => {
     "设置已更改，训练前请重新计算。",
   );
 });
-function download(obj) {
+function download(obj, filename = "poker-scenario.json") {
   const url = URL.createObjectURL(
-      new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" }),
+      obj instanceof Blob
+        ? obj
+        : new Blob([JSON.stringify(obj, null, 2)], {
+            type: "application/json",
+          }),
     ),
     a = document.createElement("a");
   a.href = url;
-  a.download = "poker-scenario.json";
+  a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -347,10 +376,7 @@ $("#export").onclick = () => {
     download({
       schema: 1,
       scenario: s,
-      equities:
-        result && JSON.stringify(s) === JSON.stringify(jobScenario)
-          ? result.eq
-          : undefined,
+      equities: result && sameScenario(s, jobScenario) ? result.eq : undefined,
     });
     msg(
       "Exported without personal training records.",
@@ -360,26 +386,93 @@ $("#export").onclick = () => {
     msg(e.message);
   }
 };
-$("#import").onchange = async (e) => {
+function transferPackage(type, payload) {
+  if (hand)
+    throw Error("Finish the hand before importing or exporting a solution");
+  stop();
+  const token = runId;
+  packageJob = type;
+  worker = new Worker("./package-worker.js", { type: "module" });
+  $("#compute").disabled = true;
+  $("#pause").disabled = false;
+  $("#resume").disabled = true;
+  $("#export-solution").disabled = true;
+  $("#import").disabled = true;
+  $("#deal").disabled = true;
+  msg(
+    type === "export"
+      ? "Preparing the solved scenario without personal records…"
+      : "Checking all saved branches and recalculating feedback; no solver run is needed…",
+    type === "export"
+      ? "正在导出已求解场景，不含个人记录…"
+      : "正在检查完整分支并重新计算反馈，无需运行求解器…",
+  );
+  worker.onerror = (e) => {
+    if (token !== runId) return;
+    stop();
+    msg(e.message || "Package operation failed");
+  };
+  worker.onmessage = async ({ data }) => {
+    if (token !== runId) return;
+    stop();
+    if (data.type === "error") {
+      msg(data.message);
+      return;
+    }
+    if (data.type === "exported") {
+      download(data.blob, "poker-solved-scenario.json");
+      msg(
+        "Solved scenario exported without personal training records.",
+        "已导出求解结果，不含个人训练记录。",
+      );
+      return;
+    }
+    fullTraining?.cancel();
+    fullTraining = null;
+    hand = null;
+    checkpoint = [];
+    jobScenario = data.scenario;
+    result = data.result;
+    fill(jobScenario);
+    $("#check").disabled = $("#shove").disabled = true;
+    $("#resume").disabled = !!result;
+    refreshTarget();
+    analysis();
+    save();
+    const imported = result;
+    if (imported) {
+      reportStatus();
+      try {
+        await solutionStore("current", imported);
+      } catch (e) {
+        if (result === imported)
+          msg("Imported, but could not save locally: " + e.message);
+      }
+    } else
+      msg(
+        "Scenario imported. Precompute before training.",
+        "场景已导入，训练前请预计算。",
+      );
+  };
+  worker.postMessage({ type, ...payload });
+}
+$("#export-solution").onclick = () => {
+  try {
+    if (!result?.full || !sameScenario(read(), result.scenario))
+      throw Error(
+        "Precompute these settings before exporting a solved scenario",
+      );
+    transferPackage("export", { result });
+  } catch (e) {
+    msg(e.message);
+  }
+};
+$("#import").onchange = (e) => {
   try {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 1000000) throw Error("Package exceeds 1 MB");
-    const p = importPackage(JSON.parse(await file.text()));
-    stop();
-    result = null;
-    hand = null;
-    checkpoint = [];
-    jobScenario = null;
-    fill(p.scenario);
-    refreshActions();
-    $("#deal").disabled = false;
-    $("#check").disabled = $("#shove").disabled = true;
-    msg(
-      "Scenario imported. Recompute to verify any supplied equities before training.",
-      "场景已导入。训练前重新计算以验证权益。",
-    );
-    save();
+    if (file.size > PACKAGE_LIMIT) throw Error("Package exceeds 128 MiB");
+    transferPackage("import", { file });
   } catch (e) {
     msg(e.message);
   } finally {
@@ -403,6 +496,7 @@ $("#deal").onclick = () => {
     return;
   }
   const g = validate(result.scenario);
+  reportStatus();
   const target = $("#target").value;
   let sampling = g;
   if (target !== "") {
@@ -694,14 +788,14 @@ try {
 }
 translate();
 if (jobScenario?.game === "full") {
-  const expected = JSON.stringify(jobScenario),
+  const expected = structuredClone(jobScenario),
     token = runId;
   solutionStore("current")
     .then((saved) => {
       if (
         token !== runId ||
         !saved?.full ||
-        JSON.stringify(saved.scenario) !== expected
+        !sameScenario(saved.scenario, expected)
       )
         return;
       result = saved;
@@ -787,10 +881,7 @@ $("#save-scenario").onclick = async () => {
     refreshLibrary();
     $("#library").value = scenario.name;
     msg("Saving the complete solution…", "正在保存完整解…");
-    if (
-      result?.full &&
-      JSON.stringify(scenario) === JSON.stringify(result.scenario)
-    )
+    if (result?.full && sameScenario(scenario, result.scenario))
       await solutionStore("library:" + scenario.name, result);
     msg("Scenario saved to your local library.", "场景已保存到本地库。");
   } catch (e) {
@@ -814,11 +905,7 @@ $("#load-scenario").onclick = async () => {
         : p.equities
           ? solveScenario(jobScenario, checkpoint, saved.nativeProfile)
           : null;
-    if (
-      result &&
-      JSON.stringify(result.scenario) !== JSON.stringify(jobScenario)
-    )
-      result = null;
+    if (result && !sameScenario(result.scenario, jobScenario)) result = null;
     fill(jobScenario);
     $("#deal").disabled = false;
     $("#check").disabled = $("#shove").disabled = true;
@@ -836,6 +923,7 @@ $("#load-scenario").onclick = async () => {
 };
 
 function refreshActions() {
+  $("#export-solution").disabled = !result?.full || !!packageJob;
   if (result?.full) {
     $("#check").hidden = $("#shove").hidden = true;
     if (!fullTraining) $("#sized-actions").replaceChildren();
