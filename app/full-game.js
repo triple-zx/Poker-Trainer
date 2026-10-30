@@ -10,6 +10,7 @@ import {
 
 const EPS = 0.00001;
 const round = (n) => Math.round(n * 1000) / 1000;
+export const FULL_NODE_LIMIT = 600000;
 export function validateFull(s) {
   const g = validate(s);
   if (s.game !== "full") throw Error("Choose full-hand training");
@@ -162,6 +163,35 @@ export function fullActionLabel(action, state, s) {
   );
 }
 
+// The same finite public action contract is used by import validation and
+// preflight counting. It depends on betting state, never on private cards.
+export function configuredFullActions(s, state, betting = fullCandidates(s)) {
+  if (state.type !== "action") return [];
+  const gap = state.spent[1 - state.player] - state.spent[state.player],
+    kind = gap > EPS ? "RAISE" : "BET",
+    remaining = round(s.stack - state.spent[state.player]),
+    cfg = betting[streetName(state.board).toLowerCase()];
+  const amounts =
+    gap > EPS && state.raises >= 4
+      ? []
+      : [
+          ...cfg[kind.toLowerCase()].map((percent) =>
+            Math.min(
+              remaining,
+              round(((s.pot + 2 * Math.max(...state.spent)) * percent) / 100) +
+                (gap > EPS ? gap : 0),
+            ),
+          ),
+          remaining,
+        ];
+  return [
+    ...(gap > EPS ? ["CALL", "FOLD"] : ["CHECK"]).map((kind) => ({ kind })),
+    ...[
+      ...new Set(amounts.map(round).filter((amount) => amount > gap + EPS)),
+    ].map((amount) => ({ kind, amount })),
+  ];
+}
+
 // The native export omits terminal children. Infer them only from legal game
 // transitions; a missing nonterminal branch is an error, never a check-down.
 export function convertFull(raw, s, { portable = false } = {}) {
@@ -177,7 +207,7 @@ export function convertFull(raw, s, { portable = false } = {}) {
         ),
     );
   function visit(data, state) {
-    if (++count > 600000)
+    if (++count > FULL_NODE_LIMIT)
       throw Error(
         "Tree exceeds the 600,000-node budget. Reduce sizes or stacks.",
       );
@@ -238,26 +268,10 @@ export function convertFull(raw, s, { portable = false } = {}) {
         throw Error("Missing legal passive action");
     if (new Set(actions.map((a) => JSON.stringify(a))).size !== actions.length)
       throw Error("Duplicate action");
-    const kind = gap > EPS ? "RAISE" : "BET",
-      remaining = round(s.stack - state.spent[state.player]);
-    const cfg = betting[streetName(state.board).toLowerCase()];
-    const amounts =
-      gap > EPS && state.raises >= 4
-        ? []
-        : [
-            ...cfg[kind.toLowerCase()].map((percent) =>
-              Math.min(
-                remaining,
-                round(
-                  ((s.pot + 2 * Math.max(...state.spent)) * percent) / 100,
-                ) + (gap > EPS ? gap : 0),
-              ),
-            ),
-            remaining,
-          ];
-    const expected = [
-      ...new Set(amounts.map(round).filter((amount) => amount > gap + EPS)),
-    ];
+    const kind = gap > EPS ? "RAISE" : "BET";
+    const expected = configuredFullActions(s, state, betting)
+      .filter((a) => a.kind === kind)
+      .map((a) => a.amount);
     if (
       expected.some(
         (amount) =>

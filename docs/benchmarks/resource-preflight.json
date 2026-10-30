@@ -1,0 +1,66 @@
+[
+  {
+    "file": ".native/full-sized-scenario.json",
+    "nativeSolves": 0,
+    "preflightMs": 3.7804999999999893,
+    "estimate": {
+      "nodes": 229446,
+      "byStreet": [
+        33,
+        3243,
+        226170
+      ],
+      "publicBoards": [
+        1,
+        47,
+        2154
+      ],
+      "policyValues": 297904,
+      "compactPolicyBytes": 2383232,
+      "pairRunouts": 3960,
+      "withinNodeBudget": true,
+      "nodeLimit": 600000,
+      "bettingStates": 135
+    },
+    "observed": {
+      "byStreet": [
+        33,
+        3243,
+        226170
+      ],
+      "policyValues": 297904
+    }
+  },
+  {
+    "file": ".native/full-hand-ip-v3.json",
+    "nativeSolves": 0,
+    "preflightMs": 1.109800000000007,
+    "estimate": {
+      "nodes": 114636,
+      "byStreet": [
+        21,
+        1755,
+        112860
+      ],
+      "publicBoards": [
+        1,
+        45,
+        1980
+      ],
+      "policyValues": 104600,
+      "compactPolicyBytes": 836800,
+      "pairRunouts": 1980,
+      "withinNodeBudget": true,
+      "nodeLimit": 600000,
+      "bettingStates": 81
+    },
+    "observed": {
+      "byStreet": [
+        21,
+        1755,
+        112860
+      ],
+      "policyValues": 104600
+    }
+  }
+]

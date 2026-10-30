@@ -6,6 +6,7 @@ import { actionLabel, sizingReport } from "./sizing-ui.js";
 import { validateFull } from "./full-game.js";
 import { startFullTraining, fullReplay } from "./full-training-ui.js";
 import { drillContext } from "./full-session.js";
+import { assertFullCapacity, estimateFullResources } from "./full-resources.js";
 import { solutionStore } from "./solution-store.js";
 import {
   sameScenario,
@@ -261,6 +262,12 @@ $("#language").onclick = () => {
   save();
 };
 async function start(s, resume = false) {
+  try {
+    if (s.game === "full") assertFullCapacity(s);
+  } catch (e) {
+    msg(e.message);
+    return;
+  }
   if (
     s.game === "full" &&
     cachedBaseline &&
@@ -1101,6 +1108,9 @@ function refreshActions() {
     }
 }
 function updateCandidatePreview() {
+  const resources = $("#resource-preview");
+  resources.replaceChildren();
+  resources.hidden = form.elements.game.value !== "full";
   try {
     const s = read(),
       g = validate(s);
@@ -1109,7 +1119,7 @@ function updateCandidatePreview() {
       betAmounts(s).join(", ") +
       t(" · Exact runouts: ", " · 精确发牌数：") +
       g.pairs.length * 990;
-    if (s.game === "full")
+    if (s.game === "full") {
       $("#full-size-preview").textContent =
         t("Full-hand candidates · ", "完整手牌候选尺度 · ") +
         Object.entries(fullCandidates(s))
@@ -1119,9 +1129,38 @@ function updateCandidatePreview() {
           )
           .join(" · ") +
         t(" · legal all-ins included", " · 包括合法全下");
+      const estimate = estimateFullResources(s);
+      const heading = document.createElement("h3");
+      heading.textContent = t("Before solving", "计算前检查");
+      resources.append(heading);
+      const lines = [
+        t(
+          `Full tree: ${estimate.nodes.toLocaleString()} / ${estimate.nodeLimit.toLocaleString()} nodes · ${estimate.withinNodeBudget ? "within the app's node capacity" : "too large to precompute"}.`,
+          `完整树：${estimate.nodes.toLocaleString()} / ${estimate.nodeLimit.toLocaleString()} 个节点 · ${estimate.withinNodeBudget ? "未超出应用节点容量" : "过大，无法预计算"}。`,
+        ),
+        t(
+          `${estimate.publicBoards[1]} compatible turn cards · ${estimate.publicBoards[2].toLocaleString()} ordered turn–river boards · ${estimate.pairRunouts.toLocaleString()} private-pair/runout combinations.`,
+          `${estimate.publicBoards[1]} 张兼容转牌 · ${estimate.publicBoards[2].toLocaleString()} 种有序转牌/河牌牌面 · ${estimate.pairRunouts.toLocaleString()} 种私牌对/发牌组合。`,
+        ),
+        t(
+          `Baseline probabilities alone: ${(estimate.compactPolicyBytes / 1048576).toFixed(2)} MiB in compact numeric form. Total RAM and runtime are not yet predicted: the solver, tree objects, feedback and exports require additional memory. This is not an 8 GB hardware guarantee.`,
+          `仅基线概率的紧凑数值数据：${(estimate.compactPolicyBytes / 1048576).toFixed(2)} MiB。尚未预测总内存和运行时间；求解器、树对象、反馈和导出需要额外内存。这不保证在 8 GB 电脑上运行。`,
+        ),
+        t(
+          "Fewer candidate sizes, shorter stacks or Fast instead of Deep can reduce the tree. Lower retained-menu limits do not reduce baseline precomputation. Imported solutions avoid solving, but still need memory to load.",
+          "减少候选尺度、降低有效筹码或将 Deep 改为 Fast 可缩小树。降低保留尺度上限不会减少基线计算量。导入已有解可跳过求解，但加载仍需要内存。",
+        ),
+      ];
+      for (const line of lines) {
+        const p = document.createElement("p");
+        p.textContent = line;
+        resources.append(p);
+      }
+    }
   } catch (e) {
     $("#size-preview").textContent = e.message;
     $("#full-size-preview").textContent = e.message;
+    resources.textContent = e.message;
   }
 }
 form.addEventListener("input", updateCandidatePreview);
