@@ -1,5 +1,6 @@
 import { DEFAULT, importPackage } from "./engine.js";
 import { convertFull, evaluateFull, validateFull } from "./full-game.js";
+import { modelBasis } from "./full-model.js";
 
 export const PACKAGE_LIMIT = 128 * 1024 * 1024;
 const scenarioFields = [
@@ -9,6 +10,7 @@ const scenarioFields = [
   "betting",
   "sizing",
   "fullSizing",
+  "fullModel",
 ];
 // Export only game settings and baseline policies. Journals, sampled cards,
 // cached EVs, and application/storage state never enter a shared package.
@@ -95,4 +97,18 @@ export function restorePackage(data) {
   );
   result.engine = "Imported baseline · independently evaluated full streets";
   return { scenario, result };
+}
+
+export function remodelSolution(result, scenario) {
+  validateFull(scenario);
+  if (
+    modelBasis(result.scenario) !== modelBasis(scenario) ||
+    result.scenario.iterations !== scenario.iterations
+  )
+    throw Error("These settings require a new baseline solve");
+  const pack = solutionPackage(result);
+  pack.scenario = scenario;
+  const restored = restorePackage(pack);
+  restored.result.engine = result.engine;
+  return restored;
 }

@@ -1,0 +1,20 @@
+{
+  "nodes": 229446,
+  "editedDecisions": 6,
+  "streets": [
+    "flop",
+    "turn",
+    "river"
+  ],
+  "kinds": [
+    "BET",
+    "RAISE"
+  ],
+  "gap": 0.010176223057286826,
+  "baselineModelEV": 2.7797734146401654,
+  "editedModelEV": 5.810606060606058,
+  "updateWallMs": 1072.8605,
+  "nativeSolves": 0,
+  "hands": 100,
+  "decisions": 185
+}

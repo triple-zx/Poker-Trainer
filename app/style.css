@@ -444,3 +444,8 @@ details[open] summary {
     scroll-behavior: auto !important;
   }
 }
+.model-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}

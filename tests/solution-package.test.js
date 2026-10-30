@@ -11,7 +11,14 @@ import {
   solutionPackage,
   restorePackage,
   sameScenario,
+  remodelSolution,
 } from "../app/solution-package.js";
+import {
+  editFullModel,
+  modelBasis,
+  modelLocks,
+  childPath,
+} from "../app/full-model.js";
 import { FullSession } from "../app/full-session.js";
 
 const scenario = {
@@ -65,6 +72,103 @@ const original = evaluateFull(
 const exported = JSON.stringify(
   solutionPackage({ ...original, records: [{ secret: "personal journal" }] }),
 );
+
+test("opponent edits reuse baseline, preserve unrelated decisions and survive sharing", () => {
+  const path = "root/a:CHECK";
+  const edited = editFullModel(scenario, path, "QcQd", {
+    CHECK: 0,
+    "BET:1": 1,
+  });
+  edited.tendency = -1;
+  const { result } = remodelSolution(original, edited);
+  assert.equal(result.gap, original.gap);
+  assert.deepEqual(result.root.children[0].model[0], [0, 1]);
+  assert.deepEqual(result.root.children[1].model[0], [0, 1]); // Unlocked: tendency folds to hero's bet.
+  assert.deepEqual(original.root.children[0].model[0], [0.5, 0.5]);
+  assert.equal(sameScenario(scenario, edited), false);
+  const restored = restorePackage(solutionPackage(result)).result;
+  assert.equal(restored.modelEV, result.modelEV);
+  assert.deepEqual(restored.scenario.fullModel, edited.fullModel);
+  const cleared = editFullModel(edited, path, "QcQd", null);
+  assert.equal(cleared.fullModel, undefined);
+  assert.deepEqual(
+    remodelSolution(original, cleared).result.root.children[0].model[0],
+    [0.5, 0.5],
+  );
+});
+
+test("turn and river opponent bets resolve by public history and leave other runouts unchanged", () => {
+  let node = original.root,
+    path = "root";
+  for (let street = 0; street < 3; street++) {
+    path = childPath(path, node, 0);
+    node = node.children[0];
+    const edited = editFullModel(scenario, path, "QcQd", {
+      CHECK: 0.2,
+      "BET:1": 0.8,
+    });
+    const locks = modelLocks(original.root, edited);
+    assert.deepEqual(locks.get(node).get(0), [0.2, 0.8]);
+    assert.equal(locks.has(original.root.children[1]), false);
+    if (street < 2) {
+      path = childPath(path, node, 0);
+      node = node.children[0];
+      const card = Object.keys(node.children)[0];
+      path = childPath(path, node, card);
+      node = node.children[card];
+    }
+  }
+});
+
+test("opponent edits reject incomplete, stale and impossible distributions", () => {
+  const edit = (path, combo, row) => editFullModel(scenario, path, combo, row);
+  assert.throws(
+    () => edit("root/a:CHECK", "QcQd", { CHECK: 0.6, "BET:1": 0.5 }),
+    /100%/,
+  );
+  assert.throws(
+    () => edit("root/a:CHECK", "QcQd", { CHECK: NaN, "BET:1": 1 }),
+    /100%/,
+  );
+  assert.throws(
+    () => modelLocks(original.root, edit("root/a:CHECK", "QcQd", { CHECK: 1 })),
+    /every legal action/,
+  );
+  assert.throws(
+    () =>
+      modelLocks(
+        original.root,
+        edit("root/a:CHECK", "AcAd", { CHECK: 0, "BET:1": 1 }),
+      ),
+    /unavailable/,
+  );
+  assert.throws(
+    () =>
+      modelLocks(original.root, edit("root/a:RAISE:99", "QcQd", { CHECK: 1 })),
+    /unknown/,
+  );
+  const edited = edit("root/a:CHECK", "QcQd", { CHECK: 0, "BET:1": 1 });
+  assert.throws(
+    () => modelLocks(original.root, { ...edited, stack: 2 }),
+    /different tree/,
+  );
+  assert.throws(
+    () =>
+      remodelSolution(original, {
+        ...scenario,
+        iterations: scenario.iterations + 1,
+      }),
+    /new baseline/,
+  );
+  assert.throws(
+    () => remodelSolution(original, { ...scenario, flop: "As7d3c" }),
+    /new baseline/,
+  );
+  assert.equal(
+    modelBasis(scenario),
+    modelBasis({ ...scenario, tendency: 0.7, deviation: 0.1, name: "changed" }),
+  );
+});
 
 test("solved packages round-trip full coverage, EVs and independent gap without a solver", () => {
   const { result } = restorePackage(JSON.parse(exported));

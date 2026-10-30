@@ -1,6 +1,7 @@
 import { fullActionLabel, streetName } from "./full-game.js";
 import { cardName, validate } from "./engine.js";
 import { fullCandidates } from "./full-sizing.js";
+import { actionKey, childPath } from "./full-model.js";
 
 export function fullSizingReport(container, result, t = (en) => en) {
   const chosen = result.selection;
@@ -53,12 +54,36 @@ export function fullSizingReport(container, result, t = (en) => en) {
   container.append(section);
 }
 
-export function fullExplorer(container, result) {
+export function fullExplorer(
+  container,
+  result,
+  onModelChange,
+  t = (en) => en,
+  selectedPath = "root",
+  onNavigate = () => {},
+) {
   const section = document.createElement("section");
   section.className = "report";
   const g = validate(result.scenario),
-    trail = [result.root];
+    trail = [result.root],
+    paths = ["root"];
+  for (const step of selectedPath.split("/").slice(1)) {
+    const node = trail.at(-1);
+    const choices =
+      node.type === "chance"
+        ? Object.keys(node.children)
+        : node.type === "action"
+          ? node.actions.map((_, i) => i)
+          : [];
+    const choice = choices.find(
+      (c) => childPath(paths.at(-1), node, c).split("/").at(-1) === step,
+    );
+    if (choice === undefined) break;
+    paths.push(childPath(paths.at(-1), node, choice));
+    trail.push(node.children[choice]);
+  }
   function render() {
+    onNavigate(paths.at(-1));
     section.replaceChildren();
     const node = trail.at(-1);
     const title = document.createElement("h3");
@@ -71,6 +96,7 @@ export function fullExplorer(container, result) {
       back.textContent = "← Previous node";
       back.onclick = () => {
         trail.pop();
+        paths.pop();
         render();
       };
       section.append(back);
@@ -98,6 +124,7 @@ export function fullExplorer(container, result) {
       const go = document.createElement("button");
       go.textContent = "Inspect card →";
       go.onclick = () => {
+        paths.push(childPath(paths.at(-1), node, select.value));
         trail.push(node.children[select.value]);
         render();
       };
@@ -122,6 +149,7 @@ export function fullExplorer(container, result) {
       const button = document.createElement("button");
       button.textContent = fullActionLabel(a, node, result.scenario);
       button.onclick = () => {
+        paths.push(childPath(paths.at(-1), node, i));
         trail.push(node.children[i]);
         render();
       };
@@ -174,6 +202,112 @@ export function fullExplorer(container, result) {
     scroll.className = "scroll";
     scroll.append(table);
     section.append(scroll);
+    if (node.player === 1 && onModelChange) {
+      const editor = document.createElement("fieldset");
+      const legend = document.createElement("legend");
+      legend.textContent = t(
+        "Edit opponent at this decision",
+        "编辑此决策的对手策略",
+      );
+      const note = document.createElement("p");
+      note.textContent = t(
+        "Applies only to the selected combination on this exact board and action history. Other decisions keep their current model. Updating reuses the saved baseline.",
+        "仅用于此牌面和行动历史下所选手牌组合。其他决策保留当前模型，更新将复用已保存的基线。",
+      );
+      const comboLabel = document.createElement("label"),
+        combo = document.createElement("select");
+      comboLabel.textContent = t("Opponent combination", "对手手牌组合");
+      g.villain.forEach((h, i) => {
+        if (!node.policy[i]) return;
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = h.label;
+        combo.append(option);
+      });
+      comboLabel.append(combo);
+      const fields = document.createElement("div"),
+        status = document.createElement("p");
+      fields.className = "model-fields";
+      const apply = document.createElement("button"),
+        reset = document.createElement("button");
+      apply.type = reset.type = "button";
+      apply.textContent = t("Apply opponent edit", "应用对手策略");
+      reset.textContent = t("Reset this combination", "重置此组合");
+      let inputs = [];
+      function populate() {
+        fields.replaceChildren();
+        const index = Number(combo.value),
+          row = node.model?.[index] || node.policy[index];
+        const percentages = row.map((p) => Math.round(p * 100000000) / 1000000);
+        const largest = row.indexOf(Math.max(...row));
+        percentages[largest] += 100 - percentages.reduce((a, b) => a + b, 0);
+        inputs = node.actions.map((a, i) => {
+          const label = document.createElement("label"),
+            input = document.createElement("input");
+          label.textContent =
+            fullActionLabel(a, node, result.scenario) + " (%)";
+          input.type = "number";
+          input.min = "0";
+          input.max = "100";
+          input.step = "any";
+          input.value = String(Number(percentages[i].toFixed(6)));
+          label.append(input);
+          fields.append(label);
+          return input;
+        });
+        const locked =
+          result.scenario.fullModel?.locks[paths.at(-1)]?.[
+            g.villain[index].label
+          ];
+        reset.disabled = !locked;
+        status.textContent = locked
+          ? t("Custom distribution saved here.", "此处已保存自定义策略。")
+          : t(
+              "Enter percentages totaling 100%.",
+              "输入百分比，总和须为 100%。",
+            );
+      }
+      const submit = (clear) => {
+        try {
+          const values = inputs.map((input) =>
+            input.value.trim() === "" ? NaN : Number(input.value) / 100,
+          );
+          if (
+            !clear &&
+            (values.some((v) => !Number.isFinite(v) || v < 0 || v > 1) ||
+              Math.abs(values.reduce((a, b) => a + b, 0) - 1) > 1e-8)
+          )
+            throw Error(
+              t(
+                "Percentages must be between 0 and 100 and total 100%.",
+                "百分比须在 0 到 100 之间，且总和为 100%。",
+              ),
+            );
+          onModelChange(
+            paths.at(-1),
+            g.villain[Number(combo.value)].label,
+            clear
+              ? null
+              : Object.fromEntries(
+                  node.actions.map((a, i) => [actionKey(a), values[i]]),
+                ),
+          );
+          editor.disabled = true;
+          status.textContent = t(
+            "Updating feedback from the saved baseline…",
+            "正在根据保存的基线更新反馈…",
+          );
+        } catch (e) {
+          status.textContent = e.message;
+        }
+      };
+      apply.onclick = () => submit(false);
+      reset.onclick = () => submit(true);
+      combo.onchange = populate;
+      editor.append(legend, note, comboLabel, fields, status, apply, reset);
+      populate();
+      section.append(editor);
+    }
   }
   container.append(section);
   render();
