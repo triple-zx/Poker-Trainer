@@ -1,3 +1,4 @@
+import { engineInfo, nativeSolve } from "./runtime.js";
 import { practiceGroups, recordActions } from "./analytics.js";
 import { equityReport, frequencyReport, replayHand } from "./analytics-ui.js";
 import { solveSized, betAmounts } from "./sizing.js";
@@ -151,14 +152,7 @@ async function start(s, resume = false) {
     controller = new AbortController();
     msg("TexasSolver is computing the baseline…", "TexasSolver 正在计算基线…");
     try {
-      const response = await fetch("/api/solve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(s),
-        signal: controller.signal,
-      });
-      const data = await response.json();
-      if (!response.ok) throw Error(data.error || "Native solve failed");
+      const data = await nativeSolve(s, controller.signal);
       if (token !== runId) return;
       nativeProfile = data;
     } catch (e) {
