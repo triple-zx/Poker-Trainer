@@ -2,6 +2,9 @@ name: Desktop packages
 on: [push, pull_request]
 permissions:
   contents: read
+concurrency:
+  group: desktop-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   desktop:
     strategy:
@@ -33,6 +36,7 @@ jobs:
       - run: node native/setup.mjs
       - run: npm run desktop:prepare
       - run: npm run desktop:smoke
+        timeout-minutes: 2
       - run: npm run desktop:dist
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'

@@ -567,8 +567,7 @@ try {
 }
 translate();
 
-fetch("/api/engine")
-  .then((r) => r.json())
+engineInfo()
   .then((info) => {
     if (!jobScenario && info.native) $("#engine").value = "native";
     if (!info.native)

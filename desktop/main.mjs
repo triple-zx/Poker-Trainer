@@ -186,7 +186,7 @@ else {
             profile,
           );
           const ready = await contents.executeJavaScript(
-            "document.title.includes('Poker Trainer') && typeof window.desktopSolver?.solve === 'function' && !!document.querySelector('#form')",
+            "document.title.includes('Poker Trainer') && typeof window.desktopSolver?.solve === 'function' && !!document.querySelector('#form') && document.querySelector('#engine').value === 'native'",
           );
           console.log(
             JSON.stringify({
