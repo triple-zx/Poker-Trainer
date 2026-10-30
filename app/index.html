@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Poker Trainer · Postflop Lab</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <a href="/" class="brand"
+        >♠ <span>POKER<span class="muted"> / TRAINER</span></span></a
+      >
+      <div>
+        <span class="badge" data-en="LOCAL · PRIVATE" data-zh="本地 · 私密"
+          >LOCAL · PRIVATE</span
+        >
+        <button id="language">中文</button>
+      </div>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <p
+            class="eyebrow"
+            data-en="POSTFLOP LAB / 01"
+            data-zh="翻牌后实验室 / 01"
+          >
+            POSTFLOP LAB / 01
+          </p>
+          <h1
+            data-en="Build a read. Test your edge."
+            data-zh="建立模型，检验策略。"
+          >
+            Build a read. Test your edge.
+          </h1>
+          <p
+            data-en="One flop. Two ranges. A deliberate decision."
+            data-zh="一个翻牌，两组范围，一次深思熟虑的决策。"
+          >
+            One flop. Two ranges. A deliberate decision.
+          </p>
+        </div>
+        <div class="version">
+          0.1<br /><span data-en="BOUNDED GAME" data-zh="有限行动模型"
+            >BOUNDED GAME</span
+          >
+        </div>
+      </section>
+      <aside
+        class="notice"
+        data-en="Scope: hero acts first on the flop: check to showdown or shove; opponent folds or calls. No later betting. All legal runouts are covered. This is a restricted game, not full no-limit GTO. Size-selection loss is unknown."
+        data-zh="范围：玩家翻牌先行动，可过牌到摊牌或全下；对手弃牌或跟注。后续无下注。覆盖所有合法转牌和河牌。这是受限游戏，并非完整无限注 GTO。下注尺度限制损失未知。"
+      ></aside>
+      <nav>
+        <button
+          data-tab="setup"
+          class="active"
+          data-en="01  Configure"
+          data-zh="01  设置"
+        >
+          01 Configure</button
+        ><button data-tab="train" data-en="02  Train" data-zh="02  训练">
+          02 Train</button
+        ><button data-tab="analysis" data-en="03  Analysis" data-zh="03  分析">
+          03 Analysis</button
+        ><button data-tab="history" data-en="04  Review" data-zh="04  复盘">
+          04 Review
+        </button>
+      </nav>
+      <p id="status" role="status" aria-live="polite"></p>
+      <section id="setup" class="pane">
+        <div class="toolbar">
+          <button
+            id="save-scenario"
+            data-en="Save to library"
+            data-zh="保存到场景库"
+          >
+            Save to library</button
+          ><label
+            ><span data-en="Saved scenarios" data-zh="已保存场景"
+              >Saved scenarios</span
+            ><select id="library"></select></label
+          ><button
+            id="load-scenario"
+            data-en="Load selected"
+            data-zh="加载所选场景"
+          >
+            Load selected
+          </button>
+        </div>
+        <form id="form">
+          <div class="columns">
+            <article>
+              <p class="eyebrow" data-en="THE SCENARIO" data-zh="场景">
+                THE SCENARIO
+              </p>
+              <h2 data-en="Set the table" data-zh="设置牌局">Set the table</h2>
+              <label
+                ><span data-en="Scenario name" data-zh="场景名称"
+                  >Scenario name</span
+                ><input name="name" maxlength="100" required /></label
+              ><label
+                ><span data-en="Flop · three cards" data-zh="翻牌 · 三张牌"
+                  >Flop · three cards</span
+                ><input name="flop" required placeholder="As 7d 2c"
+              /></label>
+              <div class="fields">
+                <label
+                  ><span data-en="Pot (bb)" data-zh="底池（大盲）"
+                    >Pot (bb)</span
+                  ><input
+                    name="pot"
+                    type="number"
+                    min="0.01"
+                    max="10000"
+                    step="any"
+                    required /></label
+                ><label
+                  ><span
+                    data-en="Effective stack (bb)"
+                    data-zh="有效筹码（大盲）"
+                    >Effective stack (bb)</span
+                  ><input
+                    name="stack"
+                    type="number"
+                    min="0.01"
+                    max="10000"
+                    step="any"
+                    required /></label
+                ><label
+                  ><span data-en="Rake (%)" data-zh="抽水（%）">Rake (%)</span
+                  ><input
+                    name="rake"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="any"
+                    required /></label
+                ><label
+                  ><span data-en="Rake cap (bb)" data-zh="抽水上限（大盲）"
+                    >Rake cap (bb)</span
+                  ><input
+                    name="cap"
+                    type="number"
+                    min="0"
+                    max="1000"
+                    step="any"
+                    required
+                /></label>
+              </div>
+              <p
+                class="hint"
+                data-en="Rake is charged on every terminal pot, including folds. A zero cap means no rake. Hero is out of position; opponent is in position."
+                data-zh="所有终局底池（含弃牌）均计抽水。上限为零表示无抽水。玩家无位置，对手有位置。"
+              ></p>
+              <label
+                ><span
+                  data-en="Precision · regret iterations"
+                  data-zh="精度 · 遗憾迭代次数"
+                  >Precision · regret iterations</span
+                ><select name="iterations">
+                  <option value="10000">10,000</option>
+                  <option value="50000">50,000</option>
+                  <option value="100000">100,000</option>
+                </select></label
+              >
+            </article>
+            <article>
+              <p
+                class="eyebrow"
+                data-en="PRIVATE INFORMATION"
+                data-zh="私有信息"
+              >
+                PRIVATE INFORMATION
+              </p>
+              <h2 data-en="Define the ranges" data-zh="定义范围">
+                Define the ranges
+              </h2>
+              <p
+                class="hint"
+                data-en="Exact combinations, comma-separated. Optional weight after a colon: AhKh:0.5. Up to 12 combinations per player; no flop overlaps. The example is synthetic, not a preflop chart."
+                data-zh="输入具体组合，用逗号分隔；冒号后可填权重，如 AhKh:0.5。每人最多12个组合，不得与翻牌重叠。示例为人工构造，并非翻前图表。"
+              ></p>
+              <label
+                ><span data-en="Hero · OOP" data-zh="玩家 · 无位置"
+                  >Hero · OOP</span
+                ><textarea name="hero" required rows="3"></textarea></label
+              ><label
+                ><span data-en="Opponent · IP" data-zh="对手 · 有位置"
+                  >Opponent · IP</span
+                ><textarea name="villain" required rows="3"></textarea></label
+              ><label
+                ><span
+                  data-en="Calling tendency (−1 always folds, +1 always calls)"
+                  data-zh="跟注倾向（−1 总是弃牌，+1 总是跟注）"
+                  >Calling tendency (−1 always folds, +1 always calls)</span
+                ><input
+                  name="tendency"
+                  type="number"
+                  min="-1"
+                  max="1"
+                  step="0.05"
+                  required /></label
+              ><label
+                ><span
+                  data-en="Combo overrides · JSON call probabilities"
+                  data-zh="组合覆盖 · JSON 跟注概率"
+                  >Combo overrides · JSON call probabilities</span
+                ><textarea
+                  name="overrides"
+                  rows="2"
+                  placeholder='{"AcQc":0.8}'
+                ></textarea></label
+              ><label
+                ><span
+                  data-en="Deviation (0 baseline → 1 best response)"
+                  data-zh="偏移程度（0 基线 → 1 最佳应对）"
+                  >Deviation (0 baseline → 1 best response)</span
+                ><input
+                  name="deviation"
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  required
+              /></label>
+            </article>
+          </div>
+          <div class="toolbar">
+            <button
+              class="primary"
+              type="submit"
+              id="compute"
+              data-en="Precompute scenario →"
+              data-zh="预计算场景 →"
+            >
+              Precompute scenario →</button
+            ><button
+              type="button"
+              id="pause"
+              disabled
+              data-en="Pause"
+              data-zh="暂停"
+            >
+              Pause</button
+            ><button
+              type="button"
+              id="resume"
+              disabled
+              data-en="Resume checkpoint"
+              data-zh="继续计算"
+            >
+              Resume checkpoint</button
+            ><button
+              type="button"
+              id="export"
+              data-en="Export scenario"
+              data-zh="导出场景"
+            >
+              Export scenario</button
+            ><label class="file"
+              ><span data-en="Import package" data-zh="导入文件"
+                >Import package</span
+              ><input type="file" id="import" accept=".json,application/json"
+            /></label>
+          </div>
+          <label
+            ><span data-en="Computation engine" data-zh="计算引擎"
+              >Computation engine</span
+            ><select id="engine" name="engine">
+              <option value="reference">Reference · browser CPU</option>
+              <option value="native">TexasSolver · native C++</option>
+            </select></label
+          ><progress id="progress" value="0" max="1"></progress>
+        </form>
+      </section>
+      <section id="train" class="pane" hidden>
+        <div class="training">
+          <div class="table">
+            <p
+              class="eyebrow"
+              data-en="OPPONENT · IN POSITION"
+              data-zh="对手 · 有位置"
+            >
+              OPPONENT · IN POSITION
+            </p>
+            <div id="opponent" class="cards"></div>
+            <p id="pot-display"></p>
+            <div id="board" class="cards"></div>
+            <p
+              class="eyebrow"
+              data-en="YOU · OUT OF POSITION"
+              data-zh="玩家 · 无位置"
+            >
+              YOU · OUT OF POSITION
+            </p>
+            <div id="hero-cards" class="cards"></div>
+          </div>
+          <div class="decision">
+            <p
+              class="eyebrow"
+              data-en="PRACTICE WITH INTENT"
+              data-zh="有目的地练习"
+            >
+              PRACTICE WITH INTENT
+            </p>
+            <h2 data-en="Your move." data-zh="轮到你了。">Your move.</h2>
+            <p
+              data-en="Feedback appears after the hand. Decisions are scored against the best response to your fixed opponent model."
+              data-zh="牌局结束后显示反馈。决策评分以针对固定对手模型的最佳应对为基准。"
+            ></p>
+            <label
+              ><span
+                data-en="Sampling · all hands or one exact combo"
+                data-zh="采样 · 所有手牌或指定组合"
+                >Sampling · all hands or one exact combo</span
+              ><select id="target">
+                <option value="">All hands · configured distribution</option>
+              </select></label
+            >
+            <p class="hint" id="sampling-note"></p>
+            <button
+              id="deal"
+              class="primary"
+              data-en="Deal a hand"
+              data-zh="开始发牌"
+            >
+              Deal a hand
+            </button>
+            <div class="toolbar">
+              <button
+                id="check"
+                disabled
+                data-en="Check down"
+                data-zh="过牌到摊牌"
+              >
+                Check down</button
+              ><button id="shove" disabled data-en="All-in" data-zh="全下">
+                All-in
+              </button>
+            </div>
+            <div id="feedback" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+      <section id="analysis" class="pane" hidden>
+        <div id="analysis-content"></div>
+      </section>
+      <section id="history" class="pane" hidden>
+        <div class="toolbar">
+          <h2 data-en="Decision journal" data-zh="决策记录">
+            Decision journal
+          </h2>
+          <button id="mistakes" data-en="Mistakes only" data-zh="仅显示失误">
+            Mistakes only</button
+          ><button id="all-history" data-en="All hands" data-zh="所有牌局">
+            All hands
+          </button>
+        </div>
+        <p id="stats"></p>
+        <div id="records"></div>
+      </section>
+      <footer
+        data-en="Local by design. No accounts, telemetry, or external services. Export a package to keep a portable backup."
+        data-zh="本地运行。无账户、遥测或外部服务。导出文件可保留便携备份。"
+      ></footer>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

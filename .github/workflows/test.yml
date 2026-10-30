@@ -1,0 +1,32 @@
+name: Test
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm run check
+      - run: npm test
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node native/setup.mjs
+      - run: node native/benchmark.mjs
+      - run: node scripts/verify-evaluator.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-benchmark-linux
+          path: docs/benchmarks/native.json

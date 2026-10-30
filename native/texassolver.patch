@@ -1,0 +1,125 @@
+diff --git a/include/ranges/RiverRangeManager.h b/include/ranges/RiverRangeManager.h
+index dfca70e..17c8c5b 100644
+--- a/include/ranges/RiverRangeManager.h
++++ b/include/ranges/RiverRangeManager.h
+@@ -1,3 +1,4 @@
++#include "CompatMutex.h"
+ //
+ // Created by Xuefeng Huang on 2020/1/31.
+ //
+@@ -21,7 +22,7 @@ private:
+     unordered_map<uint64_t , vector<RiverCombs>> p1RiverRanges;
+     unordered_map<uint64_t , vector<RiverCombs>> p2RiverRanges;
+     shared_ptr<Compairer> handEvaluator;
+-    shared_ptr<mutex> maplock;
++    shared_ptr<CompatMutex> maplock;
+ };
+ 
+ 
+diff --git a/include/solver/PCfrSolver.h b/include/solver/PCfrSolver.h
+index 3bcfcf2..07ebf02 100644
+--- a/include/solver/PCfrSolver.h
++++ b/include/solver/PCfrSolver.h
+@@ -1,3 +1,4 @@
++#include "CompatMutex.h"
+ //
+ // Created by Xuefeng Huang on 2020/1/31.
+ //
+@@ -21,7 +22,7 @@
+ template<typename T>
+ class ThreadsafeQueue {
+     std::queue<T> queue_;
+-    mutable std::mutex mutex_;
++    mutable CompatMutex mutex_;
+ 
+     // Moved out of public interface to prevent races between this
+     // and pop().
+@@ -35,19 +36,19 @@ public:
+     ThreadsafeQueue& operator=(const ThreadsafeQueue<T> &) = delete ;
+ 
+     ThreadsafeQueue(ThreadsafeQueue<T>&& other) {
+-        std::lock_guard<std::mutex> lock(mutex_);
++        std::lock_guard<CompatMutex> lock(mutex_);
+         queue_ = std::move(other.queue_);
+     }
+ 
+     virtual ~ThreadsafeQueue() { }
+ 
+     unsigned long size() const {
+-        std::lock_guard<std::mutex> lock(mutex_);
++        std::lock_guard<CompatMutex> lock(mutex_);
+         return queue_.size();
+     }
+ 
+     std::optional<T> pop() {
+-        std::lock_guard<std::mutex> lock(mutex_);
++        std::lock_guard<CompatMutex> lock(mutex_);
+         if (queue_.empty()) {
+             return {};
+         }
+@@ -57,7 +58,7 @@ public:
+     }
+ 
+     void push(const T &item) {
+-        std::lock_guard<std::mutex> lock(mutex_);
++        std::lock_guard<CompatMutex> lock(mutex_);
+         queue_.push(item);
+     }
+ };
+diff --git a/src/ranges/RiverRangeManager.cpp b/src/ranges/RiverRangeManager.cpp
+index b8796c9..c4f5a0e 100644
+--- a/src/ranges/RiverRangeManager.cpp
++++ b/src/ranges/RiverRangeManager.cpp
+@@ -10,7 +10,7 @@ RiverRangeManager::RiverRangeManager() = default;
+ 
+ RiverRangeManager::RiverRangeManager(shared_ptr<Compairer> handEvaluator) {
+     this->handEvaluator = std::move(handEvaluator);
+-    this->maplock = std::make_shared<std::mutex>();
++    this->maplock = std::make_shared<CompatMutex>();
+ }
+ 
+ const vector<RiverCombs> &
+@@ -34,7 +34,7 @@ RiverRangeManager::getRiverCombos(int player, const vector<PrivateCards> &preflo
+ 
+     // Reads and writes of the shared map must happen under the same lock.
+     {
+-        std::lock_guard<std::mutex> guard(*this->maplock);
++        std::lock_guard<CompatMutex> guard(*this->maplock);
+         auto it = riverRanges->find(key);
+         if (it != riverRanges->end()) {
+             return it->second;
+@@ -77,7 +77,7 @@ RiverRangeManager::getRiverCombos(int player, const vector<PrivateCards> &preflo
+     // Two threads can miss on the same key. emplace keeps whichever vector was
+     // published first, so a late thread gets the existing object and never
+     // destroys a buffer a caller is still reading through.
+-    std::lock_guard<std::mutex> guard(*this->maplock);
++    std::lock_guard<CompatMutex> guard(*this->maplock);
+     auto result = riverRanges->emplace(key, std::move(riverCombos));
+     return result.first->second;
+ }
+diff --git a/src/solver/BestResponse.cpp b/src/solver/BestResponse.cpp
+index 49e2560..dfd62f1 100644
+--- a/src/solver/BestResponse.cpp
++++ b/src/solver/BestResponse.cpp
+@@ -115,7 +115,7 @@ BestResponse::chanceBestReponse(shared_ptr<ChanceNode> node, int player,const ve
+ 
+     int card_num = node->getCards().size();
+     // 可能的发牌情况,2代表每个人的holecard是两张
+-    int possible_deals = node->getCards().size() - Card::long2board(current_board).size() - 2;
++    int possible_deals = node->getCards().size() - Card::long2board(current_board).size() - 4;
+ 
+     vector<float> chance_utility = vector<float>(reach_probs[player].size());
+     fill(chance_utility.begin(),chance_utility.end(),0);
+diff --git a/src/solver/PCfrSolver.cpp b/src/solver/PCfrSolver.cpp
+index f0e022b..8bfdf6d 100644
+--- a/src/solver/PCfrSolver.cpp
++++ b/src/solver/PCfrSolver.cpp
+@@ -226,7 +226,7 @@ PCfrSolver::chanceUtility(int player, shared_ptr<ChanceNode> node, const vector<
+     int card_num = node->getCards().size();
+     if(card_num % 4 != 0) throw runtime_error("card num cannot round 4");
+     // 可能的发牌情况,2代表每个人的holecard是两张
+-    int possible_deals = node->getCards().size() - Card::long2board(current_board).size() - 2;
++    int possible_deals = node->getCards().size() - Card::long2board(current_board).size() - 4;
+     int oppo = 1 - player;
+ 
+     //vector<float> chance_utility(reach_probs[player].size());

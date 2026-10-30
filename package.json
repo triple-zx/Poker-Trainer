@@ -1,0 +1,14 @@
+{
+  "name": "poker-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "check": "node --check app/app.js && node --check app/engine.js && node --check app/worker.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
