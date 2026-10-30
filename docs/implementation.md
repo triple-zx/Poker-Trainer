@@ -27,8 +27,8 @@ Resource bound: 12 exact combinations per player, at most 144 equity entries / 1
 - Implemented: equity checkpoints by completed pair. Native computation can be canceled but restarts its baseline stage; no native iteration checkpoint claim.
 - Implemented: native build, runnable C++ adapter, numerical cross-check on a synthetic fixture. Six differential fixtures passed, including fractional fast sizes and deep midpoint sizes; measured Windows runtimes are in docs/benchmarks/native.json. Larger-tree performance is still unmeasured.
 - Implemented: finite fast/deep size search, size cap and fixed-model best-response simplification loss, including explicit unmet-target reporting; per-combo/per-bet call locks. Pending: generic multi-street trees, arbitrary node locks, hand-category tendency controls, preflop tendencies beyond manually edited ranges.
-- Implemented: multiple saved scenarios in a local library, completed-hand replay details, and targeted exact-combo sampling with explicit distribution labeling. Pending: interactive action replay, category/draw targeting, and scenario-specific frequency calibration statistics.
-- Pending: hand category/draw composition, equity tables and blocker overview, multi-board aggregation.
+- Implemented: multiple saved scenarios in a local library, three-stage completed-hand replay, targeted exact-combo/category/draw sampling with explicit distribution labeling, and frequency calibration separated by full configuration, private hand and sampling mode.
+- Implemented: joint-weighted made-hand/draw composition, combo and range equity, and weighted card-removal overview. Pending: turn/river and multi-flop aggregation.
 - Pending: public preflop material acquisition and source/license review; no acquired GTO library claimed. Current fixture is synthetic and original.
 - Pending: independently computed preflop solutions; representative 8 GB Windows/macOS performance measurements and native macOS verification.
 
@@ -45,3 +45,7 @@ First strengthen native differential fixtures and measure runtime/memory across 
 ## Sizing contract
 
 Candidates are capped at stack and rounded to 0.001 bb; deep inserts adjacent midpoints. Search is finite (at most nine bets). Exhaustive subset selection measures range-weighted best-response loss versus the complete evaluated candidate set and the same fixed opponent model. No global sizing bound or restricted-tree equilibrium claim is made. Baseline is the candidate-tree solution; retained hero frequencies are renormalized before deviation blending. Numerical convergence (0.001 bb displayed target), candidate simplification loss, and unknown loss versus untested legal sizes are distinct. Native amounts are scaled by 1000 to avoid whole-chip truncation; automatic all-in substitution is disabled, and returned sizes must match exactly.
+
+## Analysis and review semantics
+
+Equity and composition use private-hand marginal probabilities from the compatible joint deal distribution. Blocker percentage is the opposing configured weight removed by the selected private hand before renormalization; it is descriptive card removal, not an EV causal attribution. Straight and flush patterns use the five known cards; raw straight outs are not corrected for hidden cards and do not imply winning outs. Hands without compatible deals show no equity. Targeting conditions the same weighted pair distribution on the chosen group. Mixed-frequency statistics group the exact scenario configuration, private hand, action amounts, and sampling target separately; target probabilities are averaged over recorded decisions. Individual action scores remain EV loss. Replay steps through flop, decision, and terminal reveal; folds do not reveal unused runout cards in newly recorded hands.
