@@ -7,6 +7,12 @@ import { validateFull } from "./full-game.js";
 import { startFullTraining, fullReplay } from "./full-training-ui.js";
 import { drillContext } from "./full-session.js";
 import { assertFullCapacity, estimateFullResources } from "./full-resources.js";
+import {
+  renderTendencyClasses,
+  readTendencies,
+  fillTendencies,
+  tendencySummary,
+} from "./tendency-ui.js";
 import { solutionStore } from "./solution-store.js";
 import {
   sameScenario,
@@ -55,6 +61,7 @@ let fullModel = null,
 let explorerPath = "root";
 const t = (en, zh) => (lang === "en" ? en : zh);
 const msg = (en, zh = en) => ($("#status").textContent = t(en, zh));
+renderTendencyClasses($("#tendency-classes"), t);
 function read() {
   const fd = new FormData(form),
     s = Object.fromEntries(fd);
@@ -70,6 +77,8 @@ function read() {
     s[k] = Number(s[k]);
   s.overrides = JSON.parse(s.overrides || "{}");
   if (s.game === "full") {
+    const tendencies = readTendencies(form);
+    if (tendencies) s.fullTendencies = tendencies;
     if (fullModel) s.fullModel = structuredClone(fullModel);
     s.engine = "native";
     if (s.fullSizingMode !== "off")
@@ -108,8 +117,12 @@ function read() {
     "fullMaxBets",
     "fullMaxRaises",
     "fullSizingLoss",
+    "bluffTendency",
+    "raiseTendency",
   ])
     delete s[field];
+  for (const field of Object.keys(s))
+    if (field.startsWith("class_")) delete s[field];
   for (const street of ["flop", "turn", "river"]) {
     delete s[street + "Bets"];
     delete s[street + "Raises"];
@@ -120,6 +133,7 @@ function read() {
   return s;
 }
 function fill(s) {
+  fillTendencies(form, s);
   fullModel = s.fullModel ? structuredClone(s.fullModel) : null;
   const iterations = form.elements.iterations;
   if (
@@ -164,6 +178,8 @@ function fill(s) {
 }
 function formatControls() {
   const full = form.elements.game.value === "full";
+  $("#opponent-tendencies").hidden = !full;
+  $("#opponent-tendencies").disabled = !full;
   form.elements.heroPosition.disabled = !full;
   if (!full) form.elements.heroPosition.value = "oop";
   positionLabels();
@@ -244,6 +260,7 @@ document
   .querySelectorAll("[data-tab]")
   .forEach((b) => (b.onclick = () => show(b.dataset.tab)));
 function translate() {
+  renderTendencyClasses($("#tendency-classes"), t);
   if (result) reportStatus();
   document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
   document
@@ -819,6 +836,11 @@ function analysis() {
       `<details class="report"><summary>${t("Range matrices", "范围矩阵")}</summary><h3>${t("You", "玩家")}</h3>${matrix(g.hero)}<h3>${t("Opponent", "对手")}</h3>${matrix(g.villain)}</details>`,
     );
     fullSizingReport(el, result, t);
+    if (s.fullTendencies) {
+      const summary = document.createElement("p");
+      summary.textContent = tendencySummary(s, t);
+      el.append(summary);
+    }
     fullExplorer(
       el,
       result,

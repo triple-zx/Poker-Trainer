@@ -379,6 +379,62 @@
               /></label>
             </article>
           </div>
+          <fieldset id="opponent-tendencies" hidden>
+            <legend
+              data-en="Opponent tendencies · full hand"
+              data-zh="对手倾向 · 完整手牌"
+            >
+              Opponent tendencies · full hand
+            </legend>
+            <div class="fields">
+              <label
+                ><span
+                  data-en="Bluff aggression · high-card proxy"
+                  data-zh="诈唬倾向 · 以高牌为近似"
+                  >Bluff aggression · high-card proxy</span
+                ><input
+                  name="bluffTendency"
+                  type="number"
+                  min="-1"
+                  max="1"
+                  step="any"
+                  value="0"
+                  required
+              /></label>
+              <label
+                ><span
+                  data-en="Made-hand raising · pair or better"
+                  data-zh="成牌加注 · 一对或更强"
+                  >Made-hand raising · pair or better</span
+                ><input
+                  name="raiseTendency"
+                  type="number"
+                  min="-1"
+                  max="1"
+                  step="any"
+                  value="0"
+                  required
+              /></label>
+            </div>
+            <p
+              data-en="−1 removes the action group, 0 preserves it, and +1 always chooses it when legal. In between, probability moves proportionally toward that endpoint. High-card hands, including draws, are only a bluff proxy: paired boards and weak made hands are not classified by equity. These are your modeling assumptions, not observed opponent facts."
+              data-zh="−1 移除该动作组，0 保留原策略，+1 在合法时总选择该组；中间值按比例向端点调整概率。高牌（含听牌）仅是诈唬的近似分类；成对牌面及弱成牌不按权益判断。这些是建模假设，并非对手的已知事实。"
+            ></p>
+            <details>
+              <summary data-en="Adjust by hand class" data-zh="按牌型调整">
+                Adjust by hand class
+              </summary>
+              <p
+                data-en="Blank uses the global setting; a number overrides it for that hand class on every street. Hand class includes the public board. Aggression is adjusted first, then calling; exact-combination call overrides apply last. Detailed edits at individual decisions replace the entire distribution."
+                data-zh="留空使用全局设置；输入数值可在所有街道覆盖该牌型的对应倾向。牌型包含公共牌。先调整下注/加注，再调整跟注；具体组合跟注概率最后应用。单个决策的详细编辑覆盖整个动作分布。"
+              ></p>
+              <div id="tendency-classes" class="scroll"></div>
+              <p
+                data-en="Each adjustment preserves relative probabilities within the action group and the remaining actions. A group with zero probability shares new probability equally. Later calling adjustments can change the earlier aggression total; inspect the final model in Analysis."
+                data-zh="每次调整保留动作组内部及其他动作的相对概率。原概率为零的组会均分新增概率。后续跟注调整可能改变先前的激进动作总概率；请在分析中查看最终模型。"
+              ></p>
+            </details>
+          </fieldset>
           <article id="bounded-settings">
             <h2 data-en="Automatic sizing" data-zh="自动选择下注尺度">
               Automatic sizing

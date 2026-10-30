@@ -1,0 +1,26 @@
+{
+  "nodes": 229446,
+  "streets": [
+    "flop",
+    "turn",
+    "river"
+  ],
+  "checkedOpponentRows": [
+    6,
+    658,
+    47388
+  ],
+  "changedOpponentRows": [
+    2,
+    243,
+    12678
+  ],
+  "gap": 0.010176223057286826,
+  "baselineModelEV": 2.7797734146401654,
+  "modeledEV": 5.666614598584381,
+  "updateWallMs": 1960.3527,
+  "nativeSolves": 0,
+  "packageSchema": 4,
+  "hands": 100,
+  "decisions": 181
+}

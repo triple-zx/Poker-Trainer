@@ -153,6 +153,44 @@ test("opponent edits reuse baseline, preserve unrelated decisions and survive sh
   );
 });
 
+test("hand-class tendencies reuse the baseline, yield to node locks and share as schema 4", () => {
+  const modeled = {
+    ...scenario,
+    fullTendencies: {
+      bluff: -0.5,
+      raise: -1,
+      classes: { 1: { bet: 1, call: -1 } },
+    },
+  };
+  const result = remodelSolution(original, modeled).result;
+  assert.equal(result.gap, original.gap);
+  assert.deepEqual(result.root.children[0].model[0], [0, 1]);
+  assert.deepEqual(result.root.children[1].model[0], [0, 1]);
+  const pack = solutionPackage(result);
+  assert.equal(pack.schema, 4);
+  const restored = restorePackage(pack).result;
+  assert.deepEqual(restored.scenario.fullTendencies, modeled.fullTendencies);
+  assert.equal(restored.modelEV, result.modelEV);
+  assert.equal(sameScenario(modeled, scenario), false);
+  const only = scenarioPackage(modeled);
+  assert.equal(only.schema, 4);
+  assert.deepEqual(
+    restorePackage(only).scenario.fullTendencies,
+    modeled.fullTendencies,
+  );
+  const locked = editFullModel(modeled, "root/a:CHECK", "QcQd", {
+    CHECK: 1,
+    "BET:1": 0,
+  });
+  assert.deepEqual(
+    remodelSolution(result, locked).result.root.children[0].model[0],
+    [1, 0],
+  );
+  const corrupt = structuredClone(pack);
+  corrupt.scenario.fullTendencies.classes[1].bet = 9;
+  assert.throws(() => restorePackage(corrupt), /tendencies/);
+});
+
 test("turn and river opponent bets resolve by public history and leave other runouts unchanged", () => {
   let node = original.root,
     path = "root";
