@@ -1,0 +1,6 @@
+node_modules/
+*.log
+release/
+.native/
+native-result.json
+tmp_log.txt

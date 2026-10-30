@@ -1,0 +1,16 @@
+set_pot 10
+set_effective_stack 15
+set_board As,7d,2c
+set_range_oop AhKh,QhQd,9h8h:0.5
+set_range_ip AcQc,KsKd,JhTh:0.5
+set_bet_sizes oop,flop,allin
+set_allin_threshold 1
+build_tree
+set_thread_num 2
+set_accuracy 0.05
+set_max_iteration 1000
+set_print_interval 100
+set_use_isomorphism 0
+start_solve
+set_dump_rounds 3
+dump_result native-result.json

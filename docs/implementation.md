@@ -1,0 +1,43 @@
+# Implementation decisions and remaining acceptance work
+
+Date: 2026-10-30. Requirements remain in `requirements.md`.
+
+## Architecture and precise semantics
+
+Local Node server plus dependency-free browser application. A Web Worker isolates exact equity enumeration from interaction. Native C++ baseline runs in a separate process; a pure JavaScript regret-matching implementation provides an independent bounded-game reference. Source and diagnostics are reproducible. No GPU dependency.
+
+Version 0.1 addresses a bounded scenario family, not arbitrary no-limit play. Hero is OOP at a fixed flop. The only aggression is a shove for the effective stack. Checking commits both players to a check-down. All-in continuations are terminal apart from board revelation. Thus all choices exposed during training have complete saved equity coverage; there are no unsolved turn/river actions disguised as ready.
+
+Chance sampling: probability of a compatible private-hand pair is proportional to the product of its two configured weights. Overlaps are excluded and remaining pairs normalized jointly. Runouts are uniform without replacement conditional on both private hands. Exact equity enumeration averages all 990 unordered runouts. Training samples ordered turn/river cards; these induce the same equity distribution.
+
+EV convention: measured from the current decision, with the existing pot sunk. Checking pays equity times the pot after rake. Called shove pays equity times the final pot after rake, minus the new contribution. Fold wins the current pot after rake. Ties receive half the pot. Rake is taken from all terminal pots, including folds, with a zero cap meaning zero rake.
+
+Opponent model: baseline call probability c is mapped to c+(1-c)t for t>=0, and c(1+t) for t<0. Per-combination overrides take precedence. No adaptation occurs after fixing this model. Deviation d blends baseline hero behavior with an exact best response, (1-d)baseline+d response. This has no certified robustness bound. Equally valued actions retain baseline mixing.
+
+Reference precision: configurable 10k/50k/100k regret iterations. Native budget capped at 10k iterations and 0.001% requested accuracy. Measured final gap, not iteration count or native success exit, is the quality diagnostic. With rake the sum of unilateral incentives is a diagnostic at the returned profile, without a zero-sum convergence guarantee. Arithmetic is floating point; there is no card sampling error. Action restriction loss is unknown.
+
+Resource bound: 12 exact combinations per player, at most 144 equity entries / 142,560 evaluated runouts. Result matrix memory below 1 MB excludes browser, evaluator temporaries, native lookup tables and process overhead. This is a deliberate capacity limit, not an 8 GB hardware benchmark.
+
+## Current acceptance status
+
+- Implemented: fixed flop and weighted exact-combo inputs, strict validation; pot/stack/rake for reference engine; OOP/IP bounded positions.
+- Implemented: calling tendency and per-combo edits, inspectable baseline/model calls, deviation blending and action EVs.
+- Implemented: complete runout coverage for the bounded game; post-hand feedback, hidden cards during normal play, local journal, bookmarks and mistake filtering.
+- Implemented: local storage, scenario export/import without journal leakage, English/Chinese primary interface.
+- Implemented: equity checkpoints by completed pair. Native computation can be canceled but restarts its baseline stage; no native iteration checkpoint claim.
+- Implemented: native build, runnable C++ adapter, numerical cross-check on a synthetic fixture. Four differential fixtures passed; measured Windows runtimes are in docs/benchmarks/native.json. Larger-tree performance is still unmeasured.
+- Pending: automatic fast/deep sizing and measured simplification losses; generic multi-street trees, detailed node locks, hand-category tendency controls, preflop tendencies beyond manually edited ranges.
+- Implemented: multiple saved scenarios in a local library, completed-hand replay details, and targeted exact-combo sampling with explicit distribution labeling. Pending: interactive action replay, category/draw targeting, and scenario-specific frequency calibration statistics.
+- Pending: hand category/draw composition, equity tables and blocker overview, multi-board aggregation.
+- Pending: public preflop material acquisition and source/license review; no acquired GTO library claimed. Current fixture is synthetic and original.
+- Pending: independently computed preflop solutions; representative 8 GB Windows/macOS performance measurements and native macOS verification.
+
+## Validation
+
+Automated suite covers card/range rejection, hand-class ordering, wheel handling, equity symmetry, rake/tie accounting, solvable pure-strategy games, equivalent actions, blend endpoints, weighted collision-free sampling, package validation, HTTP confinement, and native command/result validation.
+
+Manual browser checks: compute default scenario, train a hand with hidden opponent cards, finish and inspect EV feedback, bookmark journal record, switch language, reload saved solution. Native integration, library save/load, and targeted sampling were verified in the browser. Exhaustive five-card evaluation matched all category counts over 2,598,960 deals.
+
+## Next engineering stages
+
+First strengthen native differential fixtures and measure runtime/memory across equivalent configurations. Then generalize the native tree export contract, preserving per-node EVs and legal-card coverage. Only mark a general training package ready after validating every offered continuation. Add sizing/model features against that contract; retain the bounded engine as a regression oracle.
