@@ -63,6 +63,7 @@ export function fullExplorer(
   t = (en) => en,
   selectedPath = "root",
   onNavigate = () => {},
+  onDrill,
 ) {
   const section = document.createElement("section");
   section.className = "report";
@@ -181,6 +182,18 @@ export function fullExplorer(
         ? t("out of position", "无位置")
         : t("in position", "有位置"));
     section.append(actor);
+    if (node.player === 0 && onDrill) {
+      const drill = document.createElement("button"),
+        note = document.createElement("p");
+      drill.textContent = t("Practice this decision", "练习此决策");
+      note.textContent = t(
+        "One decision after an animated history. Private hands follow the selected range-analysis profile (adjusted hero + fixed opponent by default). Feedback uses the fixed opponent model. A zero-probability history cannot be sampled.",
+        "先播放行动历史，再练习一次决策。私牌按所选范围分析策略采样（默认玩家调整策略 + 固定对手）。反馈基于固定对手模型，无法采样零概率历史。",
+      );
+      drill.onclick = () =>
+        onDrill({ path: paths.at(-1), profile: rangeProfile });
+      section.append(drill, note);
+    }
     if (node.player === 0 && node.activeActions) {
       const menu = document.createElement("p");
       menu.textContent =
@@ -367,13 +380,22 @@ export function fullFrequencyReport(container, records) {
         r.config,
         r.hero,
         r.practiceTarget,
+        r.drill || null,
         d.board,
         d.path,
         d.choices,
       ]);
       if (!groups.has(key))
         groups.set(key, {
-          name: r.scenario + " · " + r.hero + " · " + d.street,
+          name:
+            r.scenario +
+            " · " +
+            r.hero +
+            " · " +
+            d.street +
+            (r.drill
+              ? " · decision drill · " + r.drill.profile + " sampling"
+              : " · full hand"),
           choices: d.choices,
           counts: d.choices.map(() => 0),
           target: d.choices.map(() => 0),
@@ -387,7 +409,7 @@ export function fullFrequencyReport(container, records) {
   if (!groups.size) return;
   const details = document.createElement("details"),
     summary = document.createElement("summary");
-  summary.textContent = "Full-hand frequency practice";
+  summary.textContent = "Full-hand and decision-drill frequencies";
   details.append(summary);
   const note = document.createElement("p");
   note.textContent =

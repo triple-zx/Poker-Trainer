@@ -1,14 +1,52 @@
 import { validate, sample, rank7 } from "./engine.js";
 import { fullActionLabel, streetName } from "./full-game.js";
+import { nodeReach } from "./full-node-analysis.js";
+
+export function drillContext(result, drill) {
+  const context = nodeReach(result, drill.path, drill.profile);
+  if (context.node.type !== "action" || context.node.player !== 0)
+    throw Error("Choose one of your decisions for a drill");
+  if (!context.reachable)
+    throw Error(
+      "This history has zero probability under the selected range profile",
+    );
+  for (const { i } of context.game.pairs) {
+    const ev = context.node.ev?.[i],
+      target = context.node.adjusted?.[i];
+    if (
+      !ev ||
+      ev.length !== context.node.actions.length ||
+      ev.some((v) => !Number.isFinite(v)) ||
+      !target
+    )
+      throw Error(
+        "This decision has no evaluated fixed-opponent feedback for every reachable hand",
+      );
+  }
+  return context;
+}
 
 export class FullSession {
-  constructor(result, sampling, rng = Math.random) {
+  constructor(result, sampling, rng = Math.random, drill = null) {
     if (!result.full || !result.ready)
       throw Error("A complete solution is required");
     this.result = result;
     this.g = validate(result.scenario);
     this.rng = rng;
-    this.deal = sample(sampling || this.g, rng);
+    this.drill = drill ? { path: drill.path, profile: drill.profile } : null;
+    const context = drill ? drillContext(result, drill) : null;
+    if (context) {
+      let draw = rng(),
+        pair = context.game.pairs.at(-1);
+      for (const p of context.game.pairs) {
+        draw -= p.weight;
+        if (draw < 0) {
+          pair = p;
+          break;
+        }
+      }
+      this.deal = { ...pair, runout: [] };
+    } else this.deal = sample(sampling || this.g, rng);
     this.node = result.root;
     this.events = [];
     this.decisions = [];
@@ -16,6 +54,20 @@ export class FullSession {
     this.events.push(
       this.snapshot(streetName(this.node.board) + " · action begins"),
     );
+    if (context) {
+      for (const { node, choice } of context.history) {
+        this.node = node.children[choice];
+        this.events.push(
+          this.snapshot(
+            node.type === "chance"
+              ? streetName(this.node.board)
+              : (node.player === 0 ? "You · " : "Opponent · ") +
+                  fullActionLabel(node.actions[choice], node, result.scenario),
+          ),
+        );
+      }
+    }
+    this.intro = [...this.events];
   }
   snapshot(text, node = this.node) {
     return {
@@ -59,6 +111,7 @@ export class FullSession {
       (node.player === 0 ? "You · " : "Opponent · ") + label,
     );
     this.events.push(event);
+    if (this.drill) this.finished = true;
     return event;
   }
   advance() {

@@ -19,6 +19,7 @@ export function nodeReach(result, path = "root", profile = "model") {
     ranges = [original.hero, original.villain];
   let node = result.root,
     logReach = 0;
+  const history = [];
   let joint = original.pairs.map((p) => p.weight);
   const factors = ranges.map((range) => range.map((h) => h.weight));
   function normalize() {
@@ -50,6 +51,7 @@ export function nodeReach(result, path = "root", profile = "model") {
       for (let i = 0; i < own.length; i++) own[i] *= policy[i]?.[a] || 0;
       const max = Math.max(...own);
       if (max) for (let i = 0; i < own.length; i++) own[i] /= max;
+      history.push({ node, choice: a });
       node = node.children[a];
     } else if (node.type === "chance") {
       const key = Object.keys(node.children).find(
@@ -70,12 +72,14 @@ export function nodeReach(result, path = "root", profile = "model") {
           if (h.cards.includes(card)) factors[player][i] = 0;
         }),
       );
+      history.push({ node, choice: key });
       node = node.children[key];
     } else throw Error("Analysis path continues after the hand ends");
     normalize();
   }
   return {
     node,
+    history,
     profile,
     logReach,
     reach: Math.exp(logReach),

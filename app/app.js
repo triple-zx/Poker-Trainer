@@ -5,6 +5,7 @@ import { solveSized, betAmounts } from "./sizing.js";
 import { actionLabel, sizingReport } from "./sizing-ui.js";
 import { validateFull } from "./full-game.js";
 import { startFullTraining, fullReplay } from "./full-training-ui.js";
+import { drillContext } from "./full-session.js";
 import { solutionStore } from "./solution-store.js";
 import {
   sameScenario,
@@ -581,6 +582,66 @@ function cardHTML(cs) {
     })
     .join("");
 }
+function beginFullTraining(sampling, target = "", drill = null) {
+  try {
+    const sourceResult = result;
+    if (drill) drillContext(result, drill);
+    reportStatus();
+    fullTraining?.cancel();
+    fullTraining = startFullTraining(result, sampling, {
+      cardHTML,
+      practiceTarget: target,
+      drill,
+      onFinish(record) {
+        records.unshift(record);
+        records = records.slice(0, 1000);
+        hand = null;
+        fullTraining = null;
+        save();
+        history();
+        reportStatus();
+        if (drill) {
+          const repeat = document.createElement("button");
+          repeat.textContent = t("Repeat this decision", "再次练习此决策");
+          repeat.onclick = () => {
+            if (result !== sourceResult) {
+              msg(
+                "Choose a decision from the current solution.",
+                "请从当前解中选择决策。",
+              );
+              return;
+            }
+            beginFullTraining(null, target, drill);
+          };
+          $("#feedback").append(repeat);
+        }
+      },
+      onError(e) {
+        hand = null;
+        fullTraining = null;
+        $("#deal").disabled = false;
+        msg(e.message);
+      },
+    });
+    hand = {};
+    $("#sampling-note").textContent = drill
+      ? t(
+          `Decision drill · conditional ${drill.profile === "baseline" ? "baseline" : "adjusted hero + fixed opponent"} range. Earlier actions are context only; feedback follows your one choice. The full-hand sampling selector does not apply.`,
+          `单次决策训练 · 按${drill.profile === "baseline" ? "基线" : "玩家调整策略 + 固定对手"}条件范围采样。此前行动仅作背景，只评分本次选择。完整手牌采样选择器不适用。`,
+        )
+      : target
+        ? t(
+            "Targeted practice · all applicable streets",
+            "定向训练 · 所有适用街道",
+          )
+        : t("Full range · all applicable streets", "完整范围 · 所有适用街道");
+    show("train");
+  } catch (e) {
+    hand = null;
+    $("#deal").disabled = false;
+    msg(e.message);
+  }
+}
 $("#deal").onclick = () => {
   if (!result) {
     msg("Precompute a scenario first.", "请先预计算场景。");
@@ -606,37 +667,15 @@ $("#deal").onclick = () => {
       pairs: pairs.map((p) => ({ ...p, weight: p.weight / mass })),
     };
   }
+  if (result.full) {
+    beginFullTraining(sampling, target);
+    return;
+  }
   hand = {
     ...sample(sampling),
     targeted: target !== "",
     practiceTarget: target,
   };
-  if (result.full) {
-    fullTraining?.cancel();
-    fullTraining = startFullTraining(result, sampling, {
-      cardHTML,
-      practiceTarget: target,
-      onFinish(record) {
-        records.unshift(record);
-        records = records.slice(0, 1000);
-        hand = null;
-        fullTraining = null;
-        save();
-        history();
-        reportStatus();
-      },
-      onError(e) {
-        hand = null;
-        fullTraining = null;
-        $("#deal").disabled = false;
-        msg(e.message);
-      },
-    });
-    $("#sampling-note").textContent = target
-      ? "Targeted practice · all applicable streets"
-      : "Full range · all applicable streets";
-    return;
-  }
   $("#action-history").replaceChildren();
   $("#sampling-note").textContent = hand.targeted
     ? t(
@@ -786,6 +825,12 @@ function analysis() {
       (path) => {
         explorerPath = path;
       },
+      (drill) =>
+        beginFullTraining(
+          null,
+          `decision:${drill.profile}:${drill.path}`,
+          drill,
+        ),
     );
     return;
   }
@@ -801,7 +846,7 @@ function analysis() {
 function history() {
   const loss = records.reduce((a, r) => a + r.loss, 0);
   $("#stats").textContent =
-    `${records.length} ${t("hands", "手")} · ${t("Mean total EV loss per hand", "每手平均总 EV 损失")} ${records.length ? (loss / records.length).toFixed(3) : "—"} bb · ${records.reduce((n, r) => n + (r.full ? r.decisions.length : 1), 0)} ${t("decisions", "次决策")}`;
+    `${records.length} ${t("hands/drills", "手牌/决策训练")} · ${t("Mean total EV loss per entry", "每条记录平均总 EV 损失")} ${records.length ? (loss / records.length).toFixed(3) : "—"} bb · ${records.reduce((n, r) => n + (r.full ? r.decisions.length : 1), 0)} ${t("decisions", "次决策")}`;
   const el = $("#records");
   el.innerHTML = frequencyReport(
     records.filter((r) => !r.full),
@@ -814,7 +859,7 @@ function history() {
     const div = document.createElement("div");
     div.className = "record";
     const text = document.createElement("p");
-    text.textContent = `${r.scenario} · ${r.hero} / ${r.villain} · ${r.board} · ${r.full ? r.decisions.length + " decisions" : r.action ? t("Bet", "下注") + " " + recordActions(r)[r.action] + " bb" : t("Check", "过牌")} · ${r.loss.toFixed(3)} bb`;
+    text.textContent = `${r.scenario} · ${r.hero} / ${r.villain} · ${r.board} · ${r.drill ? t("Decision drill · ", "单次决策训练 · ") : ""}${r.full ? r.decisions.length + t(r.decisions.length === 1 ? " decision" : " decisions", " 次决策") : r.action ? t("Bet", "下注") + " " + recordActions(r)[r.action] + " bb" : t("Check", "过牌")} · ${r.loss.toFixed(3)} bb`;
     const button = document.createElement("button");
     button.textContent = r.bookmark ? "★" : "☆";
     button.setAttribute("aria-label", t("Toggle bookmark", "切换书签"));

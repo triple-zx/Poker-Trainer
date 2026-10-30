@@ -5,9 +5,9 @@ import { cardName } from "./engine.js";
 export function startFullTraining(
   result,
   sampling,
-  { cardHTML, onFinish, onError, practiceTarget = "" },
+  { cardHTML, onFinish, onError, practiceTarget = "", drill = null },
 ) {
-  const session = new FullSession(result, sampling),
+  const session = new FullSession(result, sampling, Math.random, drill),
     $ = (s) => document.querySelector(s);
   const log = $("#action-history"),
     actions = $("#sized-actions");
@@ -21,6 +21,7 @@ export function startFullTraining(
   $("#opponent").innerHTML = cardHTML([null, null]);
   $("#check").hidden = $("#shove").hidden = true;
   $("#deal").disabled = true;
+  $("#target").disabled = !!drill;
   const speed = $("#animation-speed");
   speed.hidden = false;
   speed.textContent = fast ? "Animation: instant" : "Animation: on";
@@ -49,25 +50,23 @@ export function startFullTraining(
     busy = true;
     actions.replaceChildren();
     try {
-      if (first) {
-        draw(first);
+      for (const event of first || []) {
+        if (cancelled) return;
+        draw(event);
         await delay();
       }
       while (!cancelled) {
-        const event = session.advance();
-        if (!event) break;
-        draw(event);
-        await delay();
         if (session.finished) {
           $("#opponent").innerHTML = cardHTML(
             session.g.villain[session.deal.j].cards,
           );
           $("#deal").disabled = false;
+          $("#target").disabled = false;
           speed.hidden = true;
           const loss = session.decisions.reduce((sum, d) => sum + d.loss, 0);
           const feedback = $("#feedback");
           const title = document.createElement("p");
-          title.textContent = `${event.text} · ${session.decisions.length} decisions · Total EV loss ${loss.toFixed(4)} bb`;
+          title.textContent = `${drill ? "Decision drill complete · no continuation played" : session.events.at(-1).text} · ${session.decisions.length} ${session.decisions.length === 1 ? "decision" : "decisions"} · Total EV loss ${loss.toFixed(4)} bb`;
           feedback.append(title);
           for (const d of session.decisions) {
             const details = document.createElement("details"),
@@ -87,6 +86,7 @@ export function startFullTraining(
           }
           onFinish({
             full: true,
+            ...(drill ? { drill: session.drill } : {}),
             date: new Date().toISOString(),
             scenario: result.scenario.name,
             config: structuredClone(result.scenario),
@@ -102,6 +102,10 @@ export function startFullTraining(
           });
           break;
         }
+        const event = session.advance();
+        if (!event) break;
+        draw(event);
+        await delay();
       }
       if (!cancelled && !session.finished)
         session.node.actions.forEach((a, i) => {
@@ -112,21 +116,23 @@ export function startFullTraining(
             result.scenario,
           );
           button.onclick = () => {
-            if (!busy) pump(session.choose(i));
+            if (!busy) pump([session.choose(i)]);
           };
           actions.append(button);
         });
     } catch (e) {
       cancelled = true;
+      $("#target").disabled = false;
       onError(e);
     } finally {
       busy = false;
     }
   }
-  pump(session.events[0]);
+  pump(session.intro);
   return {
     cancel() {
       cancelled = true;
+      $("#target").disabled = false;
       actions.replaceChildren();
       speed.hidden = true;
     },
