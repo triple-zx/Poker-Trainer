@@ -4,7 +4,7 @@ A local postflop training and research app. English and Chinese interface. No ac
 
 ## Desktop application
 
-The product is an installable Windows/macOS desktop app with its own window, bundled runtime and local C++ engine. It does not require a browser tab or local web server. Desktop packages are produced by the Desktop packages workflow after startup checks; builds are currently unsigned.
+The product is an installable Windows/macOS desktop app with its own window, bundled runtime and local C++ engine. It does not require a browser tab or local web server. Desktop packages are produced by the Desktop packages workflow after startup checks; builds are currently unsigned. GitHub workflows are manual-only to conserve Actions minutes: pushes, pull requests and tags do not start jobs. Run checks locally by default; deliberately dispatch a workflow only when a remote platform check is needed.
 
 Developer setup (Node.js 22.12+ and native build prerequisites):
 
@@ -25,6 +25,8 @@ The optional browser preview is a development tool: `npm run preview`. App data 
 Full-hand mode precomputes flop, turn and river betting, calls, folds and raises. Choose one or two bet percentages and raise percentages for each street; legal all-ins are included. Training offers every evaluated size, including suboptimal choices. An animated action history explains how the hand reached each decision. Opponent cards and per-decision EV comparisons appear after the hand ends. Completed hands can be replayed and bookmarked.
 
 The full tree is independently checked for legal transitions, configured actions, compatible chance cards and complete private-combination strategies. Best responses aggregate the hidden opponent range before maximizing. Analysis can navigate the saved tree and compare baseline, modeled and adjusted policies. Complete solutions use IndexedDB; scenarios and the journal remain local. The desktop app and optional browser preview use separate profiles.
+
+Use **Export solved scenario** after precomputation to share a complete full-hand solution. **Import package** validates every branch and strategy and independently recalculates feedback without running the C++ solver. The imported solution can be trained immediately and is saved locally. Exports include game settings and baseline strategies, but exclude personal training records and cached EVs. Solution packages are limited to 128 MiB; scenario-only files remain limited to 1 MB and require precomputation. Import/export work runs in a background worker and can be cancelled with Pause. A failed or cancelled import preserves the previous scenario.
 
 Current full-hand limits: hero OOP, four exact combinations per player, zero rake, pot at least 4 bb, effective stack from 1 bb to three times the pot, at most three raises after the initial bet on a street. Native precomputation uses up to four CPU threads and a 30-minute timeout; tree exports are capped at 256 MB and validated trees at 600,000 nodes. These are capacity guards, not a measured 8 GB hardware guarantee. The displayed independent gap can remain above target after the iteration budget; coverage completion does not imply convergence. No claim is made about untested sizes.
 

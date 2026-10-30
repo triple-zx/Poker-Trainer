@@ -153,7 +153,7 @@ export function fullActionLabel(action, state, s) {
 
 // The native export omits terminal children. Infer them only from legal game
 // transitions; a missing nonterminal branch is an error, never a check-down.
-export function convertFull(raw, s) {
+export function convertFull(raw, s, { portable = false } = {}) {
   const g = validateFull(s),
     ranges = [g.hero, g.villain];
   let count = 0;
@@ -177,14 +177,16 @@ export function convertFull(raw, s) {
         winner: state.winner,
       };
     if (state.type === "chance") {
-      if (data?.node_type !== "chance_node")
+      if (
+        portable ? data?.type !== "chance" : data?.node_type !== "chance_node"
+      )
         throw Error("Missing chance continuation");
       const children = {};
       for (let c = 0; c < 52; c++) {
         if (state.board.includes(c) || !compatible([...state.board, c]).length)
           continue;
         children[c] = visit(
-          data.dealcards?.[cardName(c)],
+          portable ? data.children?.[c] : data.dealcards?.[cardName(c)],
           nextStreet(state, c),
         );
       }
@@ -196,13 +198,23 @@ export function convertFull(raw, s) {
       };
     }
     if (
-      data?.node_type !== "action_node" ||
-      data.player !== 1 - state.player ||
+      (portable
+        ? data?.type !== "action"
+        : data?.node_type !== "action_node" ||
+          data.player !== 1 - state.player) ||
       !Array.isArray(data.actions) ||
-      !data.actions.length
+      !data.actions.length ||
+      data.actions.length > 8
     )
       throw Error("Missing or unexpected decision node");
     const actions = data.actions.map((a) => {
+      if (portable) {
+        if (!a || !["CHECK", "CALL", "FOLD", "BET", "RAISE"].includes(a.kind))
+          throw Error("Invalid saved action");
+        return ["BET", "RAISE"].includes(a.kind)
+          ? { kind: a.kind, amount: a.amount }
+          : { kind: a.kind };
+      }
       if (["CHECK", "CALL", "FOLD"].includes(a)) return { kind: a };
       const m = /^(BET|RAISE) ([0-9]+(?:\.[0-9]+)?)$/.exec(a);
       if (!m) throw Error("Invalid native action");
@@ -212,7 +224,7 @@ export function convertFull(raw, s) {
     for (const required of gap > EPS ? ["CALL", "FOLD"] : ["CHECK"])
       if (!actions.some((a) => a.kind === required))
         throw Error("Missing legal passive action");
-    if (new Set(data.actions).size !== actions.length)
+    if (new Set(actions.map((a) => JSON.stringify(a))).size !== actions.length)
       throw Error("Duplicate action");
     const kind = gap > EPS ? "RAISE" : "BET",
       remaining = round(s.stack - state.spent[state.player]);
@@ -245,6 +257,7 @@ export function convertFull(raw, s) {
     )
       throw Error("Native tree omitted or changed a configured size");
     if (
+      !portable &&
       data.strategy?.actions &&
       JSON.stringify(data.strategy.actions) !== JSON.stringify(data.actions)
     )
@@ -253,9 +266,10 @@ export function convertFull(raw, s) {
       indices = new Set(pairs.map((p) => (state.player ? p.j : p.i)));
     const policy = ranges[state.player].map((h, i) => {
       if (!indices.has(i)) return null;
-      const v =
-        data.strategy?.strategy?.[h.label] ||
-        data.strategy?.strategy?.[h.label.slice(2) + h.label.slice(0, 2)];
+      const v = portable
+        ? data.policy?.[i]
+        : data.strategy?.strategy?.[h.label] ||
+          data.strategy?.strategy?.[h.label.slice(2) + h.label.slice(0, 2)];
       if (
         !Array.isArray(v) ||
         v.length !== actions.length ||
@@ -267,7 +281,10 @@ export function convertFull(raw, s) {
       return v.map((x) => x / mass);
     });
     const children = actions.map((a, i) =>
-      visit(data.childrens?.[data.actions[i]], transition(s, state, a)),
+      visit(
+        portable ? data.children?.[i] : data.childrens?.[data.actions[i]],
+        transition(s, state, a),
+      ),
     );
     return {
       type: "action",

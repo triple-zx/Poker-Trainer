@@ -3,6 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { DEFAULT } from "../app/engine.js";
 import { convertFull, evaluateFull } from "../app/full-game.js";
 import { FullSession } from "../app/full-session.js";
+import { solutionPackage, restorePackage } from "../app/solution-package.js";
 import { run } from "./adapter.mjs";
 
 const scenario = {
@@ -38,12 +39,18 @@ function visit(n) {
 visit(result.root);
 assert.deepEqual([...streets].sort(), [3, 4, 5]);
 assert.deepEqual([...raises].sort(), [3, 4, 5]);
+const restored = restorePackage(
+  JSON.parse(JSON.stringify(solutionPackage(result))),
+).result;
+assert.equal(restored.nodes, result.nodes);
+assert.equal(restored.gap, result.gap);
+assert.deepEqual(restored.root.ev, result.root.ev);
 let seed = 3921;
 const rng = () =>
   (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32;
 let decisions = 0;
 for (let i = 0; i < 100; i++) {
-  const hand = new FullSession(result, null, rng);
+  const hand = new FullSession(restored, null, rng);
   for (let steps = 0; !hand.finished; steps++) {
     assert.ok(steps < 60, "Hands must terminate");
     if (hand.node.type === "action" && hand.node.player === 0)
@@ -64,6 +71,7 @@ const report = {
   nodes,
   decisions,
   hands: 100,
+  importedSolution: true,
   gap: result.gap,
   nativePercent: profile.reportedPercent,
   wallMs: profile.wallMs,
