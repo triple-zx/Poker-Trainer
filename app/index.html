@@ -49,8 +49,8 @@
       </section>
       <aside
         class="notice"
-        data-en="Scope: hero acts first on the flop: check to showdown or shove; opponent folds or calls. No later betting. All legal runouts are covered. This is a restricted game, not full no-limit GTO. Size-selection loss is unknown."
-        data-zh="范围：玩家翻牌先行动，可过牌到摊牌或全下；对手弃牌或跟注。后续无下注。覆盖所有合法转牌和河牌。这是受限游戏，并非完整无限注 GTO。下注尺度限制损失未知。"
+        data-en="Scope: hero acts first on the flop: check to showdown or bet a precomputed size; opponent folds or calls. No later betting. All legal runouts are covered. This is a restricted game, not full no-limit GTO. Loss versus untested legal sizes is unknown."
+        data-zh="范围：玩家翻牌先行动，可过牌到摊牌或按预计算尺度下注；对手弃牌或跟注。后续无下注。覆盖所有合法转牌和河牌。这是受限游戏，并非完整无限注 GTO。相对未测试合法尺度的损失未知。"
       ></aside>
       <nav>
         <button
@@ -227,6 +227,71 @@
               /></label>
             </article>
           </div>
+          <article>
+            <h2 data-en="Automatic sizing" data-zh="自动选择下注尺度">
+              Automatic sizing
+            </h2>
+            <p
+              class="hint"
+              data-en="Fast selects from candidates plus all-in. Deep also tests midpoints. All betting ends after a call; no turn/river betting or raises are modeled."
+              data-zh="快速模式从候选及全下中选择；深度模式还测试中点。跟注后不再下注；不包含转牌、河牌下注或加注。"
+            ></p>
+            <div class="fields">
+              <label
+                ><span data-en="Sizing mode" data-zh="尺度模式"
+                  >Sizing mode</span
+                ><select name="sizingMode">
+                  <option value="allin" data-en="All-in only" data-zh="仅全下">
+                    All-in only
+                  </option>
+                  <option
+                    value="fast"
+                    data-en="Fast · candidates"
+                    data-zh="快速 · 候选集"
+                  >
+                    Fast · candidates
+                  </option>
+                  <option value="deep">Deep · finite midpoint search</option>
+                </select></label
+              ><label
+                ><span
+                  data-en="Candidates (% pot, comma-separated)"
+                  data-zh="候选（底池百分比，逗号分隔）"
+                  >Candidates (% pot, comma-separated)</span
+                ><input name="sizingCandidates" value="33,75" /></label
+              ><label
+                ><span
+                  data-en="Maximum retained bet sizes"
+                  data-zh="最多保留下注尺度"
+                  >Maximum retained bet sizes</span
+                ><input
+                  name="sizingLimit"
+                  type="number"
+                  min="1"
+                  max="4"
+                  value="2" /></label
+              ><label
+                ><span
+                  data-en="Target simplification loss (bb)"
+                  data-zh="目标简化损失（大盲）"
+                  >Target simplification loss (bb)</span
+                ><input
+                  name="sizingLoss"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value="0.01"
+              /></label>
+            </div>
+            <label
+              ><span
+                data-en="Node overrides · Combo@betBb: call probability (JSON)"
+                data-zh="节点覆盖 · 组合@下注大盲：跟注概率（JSON）"
+                >Node overrides · Combo@betBb: call probability (JSON)</span
+              ><textarea name="nodeOverrides" rows="2">{}</textarea>
+            </label>
+            <p id="size-preview" class="hint"></p>
+          </article>
           <div class="toolbar">
             <button
               class="primary"
@@ -340,6 +405,7 @@
                 All-in
               </button>
             </div>
+            <div id="sized-actions" class="toolbar"></div>
             <div id="feedback" aria-live="polite"></div>
           </div>
         </div>

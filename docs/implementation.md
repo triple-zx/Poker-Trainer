@@ -6,7 +6,7 @@ Date: 2026-10-30. Requirements remain in `requirements.md`.
 
 Local Node server plus dependency-free browser application. A Web Worker isolates exact equity enumeration from interaction. Native C++ baseline runs in a separate process; a pure JavaScript regret-matching implementation provides an independent bounded-game reference. Source and diagnostics are reproducible. No GPU dependency.
 
-Version 0.1 addresses a bounded scenario family, not arbitrary no-limit play. Hero is OOP at a fixed flop. The only aggression is a shove for the effective stack. Checking commits both players to a check-down. All-in continuations are terminal apart from board revelation. Thus all choices exposed during training have complete saved equity coverage; there are no unsolved turn/river actions disguised as ready.
+Version 0.1 addresses a bounded scenario family, not arbitrary no-limit play. Hero is OOP at a fixed flop. Aggression is either an all-in or one of the configured/selected bet sizes. Checking commits both players to a check-down. A call commits both players to a check-down; folds are terminal. Thus all choices exposed during training have complete saved equity coverage; there are no unsolved turn/river actions disguised as ready.
 
 Chance sampling: probability of a compatible private-hand pair is proportional to the product of its two configured weights. Overlaps are excluded and remaining pairs normalized jointly. Runouts are uniform without replacement conditional on both private hands. Exact equity enumeration averages all 990 unordered runouts. Training samples ordered turn/river cards; these induce the same equity distribution.
 
@@ -25,8 +25,8 @@ Resource bound: 12 exact combinations per player, at most 144 equity entries / 1
 - Implemented: complete runout coverage for the bounded game; post-hand feedback, hidden cards during normal play, local journal, bookmarks and mistake filtering.
 - Implemented: local storage, scenario export/import without journal leakage, English/Chinese primary interface.
 - Implemented: equity checkpoints by completed pair. Native computation can be canceled but restarts its baseline stage; no native iteration checkpoint claim.
-- Implemented: native build, runnable C++ adapter, numerical cross-check on a synthetic fixture. Four differential fixtures passed; measured Windows runtimes are in docs/benchmarks/native.json. Larger-tree performance is still unmeasured.
-- Pending: automatic fast/deep sizing and measured simplification losses; generic multi-street trees, detailed node locks, hand-category tendency controls, preflop tendencies beyond manually edited ranges.
+- Implemented: native build, runnable C++ adapter, numerical cross-check on a synthetic fixture. Six differential fixtures passed, including fractional fast sizes and deep midpoint sizes; measured Windows runtimes are in docs/benchmarks/native.json. Larger-tree performance is still unmeasured.
+- Implemented: finite fast/deep size search, size cap and fixed-model best-response simplification loss, including explicit unmet-target reporting; per-combo/per-bet call locks. Pending: generic multi-street trees, arbitrary node locks, hand-category tendency controls, preflop tendencies beyond manually edited ranges.
 - Implemented: multiple saved scenarios in a local library, completed-hand replay details, and targeted exact-combo sampling with explicit distribution labeling. Pending: interactive action replay, category/draw targeting, and scenario-specific frequency calibration statistics.
 - Pending: hand category/draw composition, equity tables and blocker overview, multi-board aggregation.
 - Pending: public preflop material acquisition and source/license review; no acquired GTO library claimed. Current fixture is synthetic and original.
@@ -41,3 +41,7 @@ Manual browser checks: compute default scenario, train a hand with hidden oppone
 ## Next engineering stages
 
 First strengthen native differential fixtures and measure runtime/memory across equivalent configurations. Then generalize the native tree export contract, preserving per-node EVs and legal-card coverage. Only mark a general training package ready after validating every offered continuation. Add sizing/model features against that contract; retain the bounded engine as a regression oracle.
+
+## Sizing contract
+
+Candidates are capped at stack and rounded to 0.001 bb; deep inserts adjacent midpoints. Search is finite (at most nine bets). Exhaustive subset selection measures range-weighted best-response loss versus the complete evaluated candidate set and the same fixed opponent model. No global sizing bound or restricted-tree equilibrium claim is made. Baseline is the candidate-tree solution; retained hero frequencies are renormalized before deviation blending. Numerical convergence (0.001 bb displayed target), candidate simplification loss, and unknown loss versus untested legal sizes are distinct. Native amounts are scaled by 1000 to avoid whole-chip truncation; automatic all-in substitution is disabled, and returned sizes must match exactly.

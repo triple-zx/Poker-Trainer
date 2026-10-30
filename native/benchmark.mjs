@@ -1,3 +1,4 @@
+import { solveSized } from "../app/sizing.js";
 import { writeFile } from "node:fs/promises";
 import os from "node:os";
 import { run } from "./adapter.mjs";
@@ -29,6 +30,30 @@ const fixtures = [
     stack: 3,
   },
 ];
+fixtures.push(
+  {
+    ...DEFAULT,
+    name: "Multiple fractional bet sizes",
+    sizing: {
+      mode: "fast",
+      candidates: [33, 75],
+      maxSizes: 2,
+      lossTarget: 0.01,
+    },
+  },
+  {
+    ...DEFAULT,
+    name: "Deep finite sizing / tiny range",
+    hero: "AhKh",
+    villain: "QcQd",
+    sizing: {
+      mode: "deep",
+      candidates: [33, 75],
+      maxSizes: 2,
+      lossTarget: 0.01,
+    },
+  },
+);
 const results = [];
 for (const s of fixtures) {
   const g = validate(s),
@@ -36,10 +61,11 @@ for (const s of fixtures) {
     eq = g.pairs.map((p) =>
       equity(g.hero[p.i].cards, g.villain[p.j].cards, g.board),
     );
-  const reference = solve(s, eq),
+  const solver = s.sizing ? solveSized : solve;
+  const reference = solver(s, eq),
     referenceMs = performance.now() - start;
   const native = await run(s);
-  const verified = solve(s, eq, native);
+  const verified = solver(s, eq, native);
   const row = {
     name: s.name,
     scenario: s,

@@ -1,3 +1,4 @@
+import { validateSizing } from "./sizing-config.js";
 export const RANKS = "23456789TJQKA",
   SUITS = "cdhs";
 export const DEFAULT = {
@@ -87,6 +88,7 @@ export function validate(s) {
       throw Error(
         "Overrides must map opponent combinations to probabilities from 0 to 1",
       );
+  validateSizing(s, villain);
   const pairs = [];
   hero.forEach((h, i) =>
     villain.forEach((v, j) => {

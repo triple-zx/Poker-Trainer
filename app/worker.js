@@ -1,4 +1,5 @@
 import { validate, equity, solve } from "./engine.js";
+import { solveSized } from "./sizing.js";
 self.onmessage = ({ data }) => {
   try {
     const g = validate(data.scenario),
@@ -21,7 +22,11 @@ self.onmessage = ({ data }) => {
     }
     self.postMessage({
       type: "result",
-      result: solve(data.scenario, eq, data.nativeProfile),
+      result: (data.scenario.sizing ? solveSized : solve)(
+        data.scenario,
+        eq,
+        data.nativeProfile,
+      ),
     });
   } catch (e) {
     self.postMessage({ type: "error", message: e.message });
