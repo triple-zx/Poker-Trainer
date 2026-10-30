@@ -1,6 +1,7 @@
 import { validate, cards, cardName, rank7 } from "./engine.js";
 import { validateFullModel, modelLocks } from "./full-model.js";
 import { firstPlayer } from "./positions.js";
+import { validateTendencies, opponentPolicy } from "./opponent-tendencies.js";
 import {
   validateFullSizing,
   fullCandidates,
@@ -53,6 +54,7 @@ export function validateFull(s) {
     }
   }
   validateFullModel(s);
+  validateTendencies(s);
   return g;
 }
 export function initialState(s) {
@@ -370,19 +372,7 @@ export function evaluateFull(tree, s, { store = true } = {}) {
     node.model = node.policy.map((v, i) => {
       if (!v) return null;
       if (locks.get(node)?.has(i)) return locks.get(node).get(i);
-      const call = node.actions.findIndex((a) => a.kind === "CALL");
-      if (call < 0) return v;
-      const target =
-        s.overrides[g.villain[i].label] ??
-        (s.tendency >= 0
-          ? v[call] + (1 - v[call]) * s.tendency
-          : v[call] * (1 + s.tendency));
-      return v.map((x, a) =>
-        a === call
-          ? target
-          : (1 - target) *
-            (v[call] < 1 - 1e-12 ? x / (1 - v[call]) : 1 / (v.length - 1)),
-      );
+      return opponentPolicy(s, node, g.villain[i], v);
     });
     modeled.add(node);
     return node.model;

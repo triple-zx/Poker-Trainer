@@ -1,6 +1,7 @@
 import { DEFAULT, importPackage } from "./engine.js";
 import { convertFull, evaluateFull, validateFull } from "./full-game.js";
 import { modelBasis } from "./full-model.js";
+import { validateTendencies } from "./opponent-tendencies.js";
 
 export const PACKAGE_LIMIT = 128 * 1024 * 1024;
 const scenarioFields = [
@@ -11,6 +12,7 @@ const scenarioFields = [
   "sizing",
   "fullSizing",
   "fullModel",
+  "fullTendencies",
   "heroPosition",
 ];
 // Export only game settings and baseline policies. Journals, sampled cards,
@@ -25,6 +27,7 @@ function scenarioCopy(s) {
   );
   if (copy.game === "full") copy.engine = "native";
   if (copy.heroPosition === "oop") delete copy.heroPosition;
+  validateTendencies(copy);
   return copy;
 }
 export function sameScenario(a, b) {
@@ -42,11 +45,16 @@ export function sameScenario(a, b) {
   return canonical(a) === canonical(b);
 }
 const needsV3 = (s) => s.heroPosition === "ip" || !!s.fullModel;
+const modelVersion = (s) => (s.fullTendencies ? 4 : needsV3(s) ? 3 : null);
 export function scenarioPackage(s, equities) {
   const scenario = scenarioCopy(s);
   if (scenario.game === "full") validateFull(scenario);
-  return needsV3(scenario)
-    ? { schema: 3, type: "poker-trainer-scenario", scenario }
+  return modelVersion(scenario)
+    ? {
+        schema: modelVersion(scenario),
+        type: "poker-trainer-scenario",
+        scenario,
+      }
     : { schema: 1, scenario, equities };
 }
 export function solutionPackage(result) {
@@ -79,14 +87,14 @@ export function solutionPackage(result) {
     };
   }
   return {
-    schema: needsV3(scenario) ? 3 : 2,
+    schema: modelVersion(scenario) || 2,
     type: "poker-trainer-solution",
     scenario,
     tree: pack(result.root),
   };
 }
 export function restorePackage(data) {
-  if (data?.schema === 3 && data.type === "poker-trainer-scenario") {
+  if ([3, 4].includes(data?.schema) && data.type === "poker-trainer-scenario") {
     const scenario = scenarioCopy(data.scenario);
     validateFull(scenario);
     return { scenario, result: null };
@@ -98,7 +106,7 @@ export function restorePackage(data) {
     return { scenario, result: null };
   }
   if (
-    ![2, 3].includes(data?.schema) ||
+    ![2, 3, 4].includes(data?.schema) ||
     data.type !== "poker-trainer-solution" ||
     !data.scenario
   )
