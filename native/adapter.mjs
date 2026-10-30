@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { validate, cardName } from "../app/engine.js";
 import { betAmounts } from "../app/sizing-config.js";
 import { validateFull } from "../app/full-game.js";
+import { fullCandidates } from "../app/full-sizing.js";
 const bundled = fileURLToPath(
   new URL("../.native/TexasSolver/", import.meta.url),
 );
@@ -43,7 +44,8 @@ export function commands(s) {
   const g = validate(s);
   if (s.game === "full") validateFull(s);
   const scale = 1000,
-    sizes = betAmounts(s);
+    sizes = betAmounts(s),
+    betting = s.game === "full" ? fullCandidates(s) : null;
   if (
     [s.pot, s.stack].some(
       (x) => Math.abs(x * scale - Math.round(x * scale)) > 1e-6,
@@ -66,9 +68,9 @@ export function commands(s) {
       ? ["oop", "ip"].flatMap((player) =>
           ["flop", "turn", "river"].flatMap((street) => [
             `set_bet_sizes ${player},${street},allin`,
-            `set_bet_sizes ${player},${street},bet,${s.betting[street].bet.join(",")}`,
-            `set_bet_sizes ${player},${street},donk,${s.betting[street].bet.join(",")}`,
-            `set_bet_sizes ${player},${street},raise,${s.betting[street].raise.join(",")}`,
+            `set_bet_sizes ${player},${street},bet,${betting[street].bet.join(",")}`,
+            `set_bet_sizes ${player},${street},donk,${betting[street].bet.join(",")}`,
+            `set_bet_sizes ${player},${street},raise,${betting[street].raise.join(",")}`,
           ]),
         )
       : ["set_bet_sizes oop,flop,allin"]),

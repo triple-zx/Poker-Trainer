@@ -15,9 +15,9 @@ The setup script fetches https://github.com/bupticybee/TexasSolver, checks out c
 
 ## Scope and provenance
 
-The adapter currently exposes only the bounded flop game described in the main README, with exact weighted combinations, no rake, and suit isomorphism disabled. It defaults to one thread for these small trees (override with TEXASSOLVER_THREADS, capped at four), limits execution to five minutes, permits one native job at a time, and uses an isolated temporary working directory. Subprocess arguments do not use a shell. Local solve requests require the exact loopback Origin. Imported data cannot specify executable paths or native commands.
+The adapter exposes both the legacy bounded flop game and full flop/turn/river betting and raising within the limits in the main README. It uses exact weighted combinations, zero rake, and disabled suit isomorphism. It defaults to one thread for these trees (override with TEXASSOLVER_THREADS, capped at four), limits bounded execution to five minutes and full-tree execution to 30 minutes, permits one native job at a time, and uses an isolated temporary working directory. Subprocess arguments do not use a shell. Development-preview solve requests require the exact loopback Origin; the desktop app uses a restricted IPC bridge. Imported data cannot specify executable paths or native commands.
 
-Upstream console source uses AGPL-3.0; see `TEXASSOLVER-LICENSE`. The main branch README also contains additional licensing statements: https://github.com/bupticybee/TexasSolver#license. This repository supplies a local build procedure, original adapter, and source patch, not upstream binaries. Review distribution/licensing decisions before bundling a modified engine or operating a hosted solver. No paid licensing agreement has been entered into.
+Upstream console source uses AGPL-3.0; see `TEXASSOLVER-LICENSE`. The main branch README also contains additional licensing statements: https://github.com/bupticybee/TexasSolver#license. This repository supplies a local build procedure, original adapter and source patch. Desktop packages bundle the compiled modified engine, its pinned source archive, patch, build recipe and license. No paid licensing agreement has been entered into.
 
 The older official v0.1.1 Windows release was tried and rejected the exact-combination input `AcQc`. It is not a compatible backend for this adapter.
 
@@ -41,7 +41,7 @@ The verifier measures the sum of both players' unilateral improvement incentives
 
 For zero rake, the native reported percent is half of this gap divided by pot, multiplied by 100. Compare units explicitly. The initial pre-patch result reported `0.00006914139%`, while independent gap was `0.007079991 bb`. After the chance normalization patch, native reported `0.004044175%` and independent gap was `0.000809673 bb` at the same 10 bb pot, which agree to floating-point tolerance. The included verifier requires gap below 0.001 bb for this fixture.
 
-The interactive adapter requests 0.001% native accuracy; maximum iterations may stop before that target. The independently measured gap is displayed regardless. Small fixed-tree gap does not establish optimal bet sizing or robustness of an opponent model.
+The bounded adapter requests 0.001% native accuracy; full-hand mode requests `0.05 / pot` percent, corresponding to a 0.001 bb Nash gap. Maximum iterations may stop before the requested accuracy. The independently measured gap is displayed regardless. Small fixed-tree gap does not establish optimal bet sizing or robustness of an opponent model.
 
 ## Direct evaluator and measured efficiency
 
@@ -56,3 +56,7 @@ The four complete fixture runs additionally show the effect of reducing thread s
 ## Multiple sizes
 
 The adapter supports the finite fast/deep root-size candidate set with call/fold responses and no later betting. Pot and stack support three decimal places in bb and are scaled by 1000 for native whole-chip rounding. Native automatic near-all-in substitution is disabled because it otherwise changes requested sizes; extraction requires exact configured action amounts. Six differential fixtures now include fast fractional sizes and deep midpoint search. These add runtime: about 7 seconds for the default 3-by-3 fast fixture and 2.8 seconds for the 1-by-1 deep fixture on the measured Windows machine. The browser reference can be faster on this bounded game; C++ is retained for native integration and future larger-tree work, not asserted faster for every small fixture.
+
+Full-hand mode configures both players on every street and exports all three streets. Fast uses the seed menus; Deep adds finite midpoint and starting-flop geometric candidates through the same shared configuration function used by the independent converter. Every required legal action and chance continuation is validated before training. Automatic hero-menu selection and the measured fixed-opponent simplification loss are evaluated after the native baseline solve; they do not claim a restricted-tree equilibrium.
+
+Run `node native/verify-full.mjs` for full coverage, independent gap agreement and portable-solution training. Run `node native/verify-sizing.mjs` for deep candidate expansion, node-specific size caps, import equivalence and 100 hands choosing from all evaluated sizes. The optional `--export-fixture` flag saves a reusable package under the ignored `.native/` directory for UI testing. These checks should normally run locally to conserve GitHub Actions minutes.

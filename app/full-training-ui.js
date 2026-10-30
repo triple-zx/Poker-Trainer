@@ -77,6 +77,10 @@ export function startFullTraining(
             d.choices.forEach((label, i) => {
               const p = document.createElement("p");
               p.textContent = `${label}: EV ${d.ev[i].toFixed(4)} bb · target ${(100 * d.target[i]).toFixed(1)}%`;
+              if (d.retained)
+                p.textContent += d.retained.includes(i)
+                  ? " · retained menu"
+                  : " · alternative evaluated choice";
               details.append(p);
             });
             feedback.append(details);
@@ -152,7 +156,12 @@ export function fullReplay(container, record, cardHTML, parseCards) {
     const p = document.createElement("p");
     p.textContent =
       `${d.street}: ${d.label} · loss ${d.loss.toFixed(4)} bb · ` +
-      d.choices.map((c, i) => `${c}: ${d.ev[i].toFixed(3)} bb`).join(" / ");
+      d.choices
+        .map(
+          (c, i) =>
+            `${c}: ${d.ev[i].toFixed(3)} bb${d.retained ? (d.retained.includes(i) ? " (retained)" : " (alternative)") : ""}`,
+        )
+        .join(" / ");
     box.append(p);
   }
   container.append(box);

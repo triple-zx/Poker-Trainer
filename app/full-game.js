@@ -1,4 +1,10 @@
 import { validate, cards, cardName, rank7 } from "./engine.js";
+import {
+  validateFullSizing,
+  fullCandidates,
+  selectNodeMenu,
+  chooseMenuLimits,
+} from "./full-sizing.js";
 
 const EPS = 0.00001;
 const round = (n) => Math.round(n * 1000) / 1000;
@@ -16,6 +22,7 @@ export function validateFull(s) {
       "Full-hand trees support up to four exact combinations per player",
     );
   if (s.sizing) throw Error("Use full-hand sizing settings");
+  validateFullSizing(s);
   for (const street of ["flop", "turn", "river"]) {
     const cfg = s.betting?.[street];
     if (!cfg) throw Error("Missing " + street + " sizes");
@@ -155,7 +162,8 @@ export function fullActionLabel(action, state, s) {
 // transitions; a missing nonterminal branch is an error, never a check-down.
 export function convertFull(raw, s, { portable = false } = {}) {
   const g = validateFull(s),
-    ranges = [g.hero, g.villain];
+    ranges = [g.hero, g.villain],
+    betting = fullCandidates(s);
   let count = 0;
   const compatible = (board) =>
     g.pairs.filter(
@@ -228,7 +236,7 @@ export function convertFull(raw, s, { portable = false } = {}) {
       throw Error("Duplicate action");
     const kind = gap > EPS ? "RAISE" : "BET",
       remaining = round(s.stack - state.spent[state.player]);
-    const cfg = s.betting[streetName(state.board).toLowerCase()];
+    const cfg = betting[streetName(state.board).toLowerCase()];
     const amounts =
       gap > EPS && state.raises >= 4
         ? []
@@ -359,7 +367,7 @@ export function evaluateFull(tree, s, { store = true } = {}) {
     modeled.add(node);
     return node.model;
   };
-  function response(player, model, record) {
+  function response(player, model, record, limits = null) {
     function walk(node, reach) {
       const values = Array(ranges[player].length).fill(0);
       if (node.type === "terminal") {
@@ -422,20 +430,41 @@ export function evaluateFull(tree, s, { store = true } = {}) {
       const ev = values.map((_, i) =>
         masses[i] ? rows.map((row) => row[i] / masses[i]) : null,
       );
+      const active = limits
+        ? limits.frozen
+          ? node.activeActions
+          : selectNodeMenu(node.actions, rows, limits.maxBets, limits.maxRaises)
+        : node.actions.map((_, i) => i);
       values.forEach(
-        (_, i) => (values[i] = Math.max(...rows.map((row) => row[i]))),
+        (_, i) => (values[i] = Math.max(...active.map((a) => rows[a][i]))),
       );
       if (record) {
-        node.ev = ev;
+        if (limits) {
+          node.activeActions = active;
+          node.sizingEV = ev;
+        } else {
+          node.ev = ev;
+          delete node.activeActions;
+          delete node.sizingEV;
+        }
         node.adjusted = ev.map((v, i) => {
           if (!v) return null;
-          const best = Math.max(...v),
-            winners = v.map((x) => (Math.abs(x - best) < 1e-8 ? 1 : 0)),
-            n = winners.reduce((a, b) => a + b, 0);
+          const best = Math.max(...active.map((a) => v[a])),
+            winners = active.filter((a) => Math.abs(v[a] - best) < 1e-8),
+            mass = active.reduce((sum, a) => sum + node.policy[i][a], 0),
+            baseline = node.policy[i].map((x, a) =>
+              active.includes(a) ? (mass ? x / mass : 1 / active.length) : 0,
+            ),
+            winnerMass = winners.reduce((sum, a) => sum + baseline[a], 0);
           return v.map(
             (_, a) =>
-              (1 - s.deviation) * node.policy[i][a] +
-              (s.deviation * winners[a]) / n,
+              (1 - s.deviation) * baseline[a] +
+              s.deviation *
+                (winners.includes(a)
+                  ? winnerMass
+                    ? baseline[a] / winnerMass
+                    : 1 / winners.length
+                  : 0),
           );
         });
       }
@@ -449,6 +478,41 @@ export function evaluateFull(tree, s, { store = true } = {}) {
   const h = response(0, false, false),
     v = response(1, false, false);
   const modelEV = response(0, true, store);
+  let selection = null;
+  if (s.fullSizing) {
+    const candidates = [],
+      limits = [];
+    for (let maxBets = 1; maxBets <= s.fullSizing.maxBets; maxBets++)
+      for (let maxRaises = 1; maxRaises <= s.fullSizing.maxRaises; maxRaises++)
+        limits.push({ maxBets, maxRaises });
+    limits.sort(
+      (a, b) =>
+        a.maxBets + a.maxRaises - b.maxBets - b.maxRaises ||
+        a.maxBets - b.maxBets,
+    );
+    let satisfiedComplexity = Infinity;
+    for (const limit of limits) {
+      const complexity = limit.maxBets + limit.maxRaises;
+      if (complexity > satisfiedComplexity) break;
+      const value = response(0, true, false, limit);
+      candidates.push({ ...limit, value });
+      if (modelEV - value <= s.fullSizing.lossTarget + 1e-10)
+        satisfiedComplexity = complexity;
+    }
+    selection = {
+      mode: s.fullSizing.mode,
+      ...chooseMenuLimits(candidates, modelEV, s.fullSizing.lossTarget),
+      testedLimits: candidates.length,
+    };
+    if (store) {
+      response(0, true, true, selection);
+      const measured = response(0, true, false, { frozen: true });
+      if (Math.abs(measured - selection.value) > 1e-8)
+        throw Error("Retained-menu EV verification failed");
+      selection.value = measured;
+      selection.loss = Math.max(0, modelEV - measured);
+    }
+  }
   return {
     full: true,
     schema: 2,
@@ -456,6 +520,7 @@ export function evaluateFull(tree, s, { store = true } = {}) {
     ...tree,
     gap: Math.max(0, h + v - s.pot),
     modelEV,
+    selection,
     ready: true,
     engine: "TexasSolver · independently evaluated full streets",
     coverage: g.pairs.length * 45 * 44,
