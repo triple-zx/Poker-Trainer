@@ -51,6 +51,7 @@ export class FullSession {
         ev: [...ev],
         loss: Math.max(...ev) - ev[a],
         target: node.adjusted[this.deal.i],
+        retained: node.activeActions ? [...node.activeActions] : null,
       });
     }
     this.node = node.children[a];

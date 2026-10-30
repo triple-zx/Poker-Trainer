@@ -1,0 +1,100 @@
+{
+  "scenario": {
+    "name": "Deep sizing · native verification",
+    "flop": "As 7d 2c",
+    "hero": "AhKh,9h8h",
+    "villain": "QcQd",
+    "pot": 4,
+    "stack": 3,
+    "rake": 0,
+    "cap": 0,
+    "tendency": 0,
+    "overrides": {},
+    "deviation": 1,
+    "iterations": 500,
+    "engine": "native",
+    "game": "full",
+    "betting": {
+      "flop": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      },
+      "turn": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      },
+      "river": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      }
+    },
+    "fullSizing": {
+      "mode": "deep",
+      "maxBets": 1,
+      "maxRaises": 1,
+      "lossTarget": 0.01
+    }
+  },
+  "candidates": {
+    "flop": {
+      "bet": [
+        37.5,
+        50
+      ],
+      "raise": [
+        75,
+        100
+      ]
+    },
+    "turn": {
+      "bet": [
+        37.5,
+        50
+      ],
+      "raise": [
+        75,
+        100
+      ]
+    },
+    "river": {
+      "bet": [
+        37.5,
+        50
+      ],
+      "raise": [
+        75,
+        100
+      ]
+    }
+  },
+  "nodes": 229446,
+  "gap": 0.010176223057286826,
+  "selection": {
+    "mode": "deep",
+    "maxBets": 1,
+    "maxRaises": 1,
+    "value": 2.779733373082231,
+    "loss": 0.00004004155793424502,
+    "fullValue": 2.7797734146401654,
+    "targetReached": true,
+    "lossTarget": 0.01,
+    "testedLimits": 1
+  },
+  "hands": 100,
+  "decisions": 201,
+  "alternativeActions": 16858,
+  "nativeWallMs": 228854.3756,
+  "totalWallMs": 236046.1289
+}

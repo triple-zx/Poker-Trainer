@@ -7,7 +7,12 @@ import { validateFull } from "./full-game.js";
 import { startFullTraining, fullReplay } from "./full-training-ui.js";
 import { solutionStore } from "./solution-store.js";
 import { sameScenario, PACKAGE_LIMIT } from "./solution-package.js";
-import { fullExplorer, fullFrequencyReport } from "./full-analysis-ui.js";
+import {
+  fullExplorer,
+  fullFrequencyReport,
+  fullSizingReport,
+} from "./full-analysis-ui.js";
+import { fullCandidates } from "./full-sizing.js";
 import {
   DEFAULT,
   cards,
@@ -55,6 +60,13 @@ function read() {
   s.overrides = JSON.parse(s.overrides || "{}");
   if (s.game === "full") {
     s.engine = "native";
+    if (s.fullSizingMode !== "off")
+      s.fullSizing = {
+        mode: s.fullSizingMode,
+        maxBets: Number(s.fullMaxBets),
+        maxRaises: Number(s.fullMaxRaises),
+        lossTarget: Number(s.fullSizingLoss),
+      };
     s.betting = Object.fromEntries(
       ["flop", "turn", "river"].map((street) => [
         street,
@@ -79,6 +91,10 @@ function read() {
     "sizingLimit",
     "sizingLoss",
     "nodeOverrides",
+    "fullSizingMode",
+    "fullMaxBets",
+    "fullMaxRaises",
+    "fullSizingLoss",
   ])
     delete s[field];
   for (const street of ["flop", "turn", "river"]) {
@@ -103,6 +119,10 @@ function fill(s) {
     iterations.append(option);
   }
   form.elements.game.value = s.game || "bounded";
+  form.elements.fullSizingMode.value = s.fullSizing?.mode || "off";
+  form.elements.fullMaxBets.value = s.fullSizing?.maxBets || 1;
+  form.elements.fullMaxRaises.value = s.fullSizing?.maxRaises || 1;
+  form.elements.fullSizingLoss.value = s.fullSizing?.lossTarget ?? 0.01;
   for (const street of ["flop", "turn", "river"]) {
     form.elements[street + "Bets"].value = (
       s.betting?.[street]?.bet || [33, 75]
@@ -125,6 +145,7 @@ function fill(s) {
     if (form.elements[k])
       form.elements[k].value = k === "overrides" ? JSON.stringify(v) : v;
   formatControls();
+  updateCandidatePreview();
 }
 function formatControls() {
   const full = form.elements.game.value === "full";
@@ -132,6 +153,9 @@ function formatControls() {
   $("#bounded-settings").hidden = full;
   $("#engine").disabled = full;
   if (full) $("#engine").value = "native";
+  for (const name of ["fullMaxBets", "fullMaxRaises", "fullSizingLoss"])
+    form.elements[name].disabled =
+      !full || form.elements.fullSizingMode.value === "off";
 }
 function save() {
   try {
@@ -188,6 +212,7 @@ function translate() {
   refreshTarget();
   analysis();
   history();
+  updateCandidatePreview();
 }
 $("#language").onclick = () => {
   lang = lang === "en" ? "zh" : "en";
@@ -300,6 +325,11 @@ function reportStatus() {
     `${result.full ? "Flop, turn and river · " + result.nodes.toLocaleString() + " verified nodes" : "Coverage complete"} · measured gap ${result.gap.toFixed(5)} bb · 0.001 bb precision target ${met ? "met" : "not met; increase iterations"}. Loss versus untested sizes is unknown.`,
     `覆盖完整 · 实测差距 ${result.gap.toFixed(5)} 大盲 · ${met ? "达到" : "未达到，请增加迭代"} 0.001 大盲精度目标。未测试尺度的损失未知。`,
   );
+  if (result.full && result.selection)
+    $("#status").textContent += t(
+      ` Retained-menu loss ${result.selection.loss.toFixed(5)} bb · target ${result.selection.targetReached ? "met" : "not met"} against the fixed opponent.`,
+      ` 保留尺度的损失 ${result.selection.loss.toFixed(5)} 大盲 · 对固定对手${result.selection.targetReached ? "达到" : "未达到"}损失目标。`,
+    );
 }
 form.onsubmit = (e) => {
   e.preventDefault();
@@ -680,6 +710,7 @@ function analysis() {
       "beforeend",
       `<details class="report"><summary>${t("Range matrices", "范围矩阵")}</summary><h3>${t("You", "玩家")}</h3>${matrix(g.hero)}<h3>${t("Opponent", "对手")}</h3>${matrix(g.villain)}</details>`,
     );
+    fullSizingReport(el, result, t);
     fullExplorer(el, result);
     return;
   }
@@ -744,7 +775,12 @@ $("#all-history").onclick = () => {
   filter = false;
   history();
 };
-fill({ ...DEFAULT, game: "full", iterations: 1000 });
+fill({
+  ...DEFAULT,
+  game: "full",
+  iterations: 1000,
+  fullSizing: { mode: "fast", maxBets: 1, maxRaises: 1, lossTarget: 0.01 },
+});
 try {
   const raw = localStorage.getItem(key);
   if (raw) {
@@ -942,7 +978,7 @@ function refreshActions() {
       box.append(button);
     }
 }
-form.addEventListener("input", () => {
+function updateCandidatePreview() {
   try {
     const s = read(),
       g = validate(s);
@@ -952,9 +988,18 @@ form.addEventListener("input", () => {
       t(" · Exact runouts: ", " · 精确发牌数：") +
       g.pairs.length * 990;
     if (s.game === "full")
-      $("#size-preview").textContent =
-        "Full-hand tree · all-in plus configured street sizes · native C++ precomputation";
+      $("#full-size-preview").textContent =
+        t("Full-hand candidates · ", "完整手牌候选尺度 · ") +
+        Object.entries(fullCandidates(s))
+          .map(
+            ([street, cfg]) =>
+              `${street}: bets ${cfg.bet.join("/")}% · raises ${cfg.raise.join("/")}%`,
+          )
+          .join(" · ") +
+        t(" · legal all-ins included", " · 包括合法全下");
   } catch (e) {
     $("#size-preview").textContent = e.message;
+    $("#full-size-preview").textContent = e.message;
   }
-});
+}
+form.addEventListener("input", updateCandidatePreview);

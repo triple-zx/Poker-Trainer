@@ -2,6 +2,8 @@
 
 A local postflop training and research app. English and Chinese interface. No account, cloud database, telemetry, or GPU required.
 
+Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions and automatic full-hand sizing for the next release; use the developer setup below to run those changes now.
+
 ## Desktop application
 
 The product is an installable Windows/macOS desktop app with its own window, bundled runtime and local C++ engine. It does not require a browser tab or local web server. Desktop packages are produced by the Desktop packages workflow after startup checks; builds are currently unsigned. GitHub workflows are manual-only to conserve Actions minutes: pushes, pull requests and tags do not start jobs. Run checks locally by default; deliberately dispatch a workflow only when a remote platform check is needed.
@@ -30,7 +32,9 @@ Use **Export solved scenario** after precomputation to share a complete full-han
 
 Current full-hand limits: hero OOP, four exact combinations per player, zero rake, pot at least 4 bb, effective stack from 1 bb to three times the pot, at most three raises after the initial bet on a street. Native precomputation uses up to four CPU threads and a 30-minute timeout; tree exports are capped at 256 MB and validated trees at 600,000 nodes. These are capacity guards, not a measured 8 GB hardware guarantee. The displayed independent gap can remain above target after the iteration budget; coverage completion does not imply convergence. No claim is made about untested sizes.
 
-Automatic finite candidate pruning is currently available in the legacy bounded drill. Full-hand training uses explicit per-street menus; automatic full-tree simplification, more general opponent edits, preflop libraries/solving and broad aggregation remain ongoing work. See [acceptance status](docs/implementation.md).
+Full-hand sizing offers **Fast** selection from the configured candidates and **Deep** expansion with finite midpoint and geometric candidates. Set separate maximum retained bet/raise sizes and a target whole-hand EV loss. All-in counts toward the limits. The selected menus may differ at every hero decision, including later-street raises. Every evaluated action remains available during training, including alternatives outside the retained menu; review identifies them afterward.
+
+The app compares best-response EV with all candidates against the complete retained menus, using the same fixed opponent model. It tries smaller limits first and reports when the requested loss target is not met. Menu selection is a heuristic across public nodes, not a guarantee of globally optimal menus. Fixed-tree convergence, measured fixed-opponent simplification loss, and unknown loss versus untested sizes are separate. The deviation blend is projected onto retained menus; training EV scores still compare every candidate with unrestricted future continuation. Deep can exceed the tree/resource guards; it never silently drops requested branches. More general opponent edits, preflop libraries/solving and broad aggregation remain ongoing work. See [acceptance status](docs/implementation.md).
 
 ## Legacy bounded flop laboratory
 

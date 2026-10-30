@@ -1,5 +1,57 @@
 import { fullActionLabel, streetName } from "./full-game.js";
 import { cardName, validate } from "./engine.js";
+import { fullCandidates } from "./full-sizing.js";
+
+export function fullSizingReport(container, result, t = (en) => en) {
+  const chosen = result.selection;
+  if (!chosen) return;
+  const section = document.createElement("section");
+  section.className = "report";
+  const title = document.createElement("h3");
+  title.textContent = t(
+    "Automatic sizing · full hand",
+    "自动尺度选择 · 完整手牌",
+  );
+  section.append(title);
+  const lines = [
+    t(
+      `At most ${chosen.maxBets} bet and ${chosen.maxRaises} raise sizes per hero decision, including all-in. All candidate actions remain available for practice.`,
+      `玩家每个决策最多保留 ${chosen.maxBets} 个下注和 ${chosen.maxRaises} 个加注尺度（含全下）。训练中仍可使用全部候选动作。`,
+    ),
+    t(
+      `Measured fixed-opponent loss: ${chosen.loss.toFixed(5)} bb. Target ${chosen.lossTarget.toFixed(5)} bb: ${chosen.targetReached ? "met" : "not met; allow more sizes or revise the target"}.`,
+      `对固定对手的实测损失：${chosen.loss.toFixed(5)} 大盲。目标 ${chosen.lossTarget.toFixed(5)} 大盲：${chosen.targetReached ? "已达到" : "未达到；可增加尺度上限或调整目标"}。`,
+    ),
+    t(
+      `Best-response EV with all candidates: ${chosen.fullValue.toFixed(5)} bb; with retained menus: ${chosen.value.toFixed(5)} bb.`,
+      `使用全部候选尺度的最佳回应 EV：${chosen.fullValue.toFixed(5)} 大盲；仅使用保留尺度：${chosen.value.toFixed(5)} 大盲。`,
+    ),
+    t(
+      "Menus are selected across the tree using continuation EVs, then evaluated as a complete strategy restriction. This search can miss a better combination of menus. The measured loss is for the menus it chose, not an equilibrium or untested-size guarantee.",
+      "基于后续行动 EV 在整棵树中选择尺度，再评估整体策略限制。搜索可能遗漏更好的尺度组合。实测损失仅针对所选尺度，不保证均衡或未测试尺度的表现。",
+    ),
+    t(
+      "Decision scores still compare all evaluated choices with unrestricted best continuation. Frequency targets renormalize baseline probabilities over retained actions, then apply your deviation setting. Solver convergence is reported separately.",
+      "决策评分仍比较所有已计算选项及不限制尺度的最佳后续行动。频率目标先将保留动作的基线概率重新归一化，再应用偏移设置。求解收敛性单独报告。",
+    ),
+  ];
+  for (const line of lines) {
+    const p = document.createElement("p");
+    p.textContent = line;
+    section.append(p);
+  }
+  const candidates = document.createElement("p");
+  candidates.textContent =
+    t("Evaluated candidates: ", "已评估候选尺度：") +
+    Object.entries(fullCandidates(result.scenario))
+      .map(
+        ([street, cfg]) =>
+          `${street} · bet ${cfg.bet.join("/")}% · raise ${cfg.raise.join("/")}%`,
+      )
+      .join("; ");
+  section.append(candidates);
+  container.append(section);
+}
 
 export function fullExplorer(container, result) {
   const section = document.createElement("section");
@@ -57,6 +109,15 @@ export function fullExplorer(container, result) {
     actor.textContent =
       node.player === 0 ? "You · out of position" : "Opponent · in position";
     section.append(actor);
+    if (node.player === 0 && node.activeActions) {
+      const menu = document.createElement("p");
+      menu.textContent =
+        "Retained menu: " +
+        node.activeActions
+          .map((i) => fullActionLabel(node.actions[i], node, result.scenario))
+          .join(" · ");
+      section.append(menu);
+    }
     node.actions.forEach((a, i) => {
       const button = document.createElement("button");
       button.textContent = fullActionLabel(a, node, result.scenario);
@@ -74,6 +135,7 @@ export function fullExplorer(container, result) {
       "Baseline",
       node.player === 0 ? "Adjusted" : "Opponent model",
       ...(node.player === 0 ? ["EV (bb)"] : []),
+      ...(node.sizingEV ? ["EV with retained future menus (bb)"] : []),
     ]) {
       const th = document.createElement("th");
       th.textContent = name;
@@ -95,6 +157,9 @@ export function fullExplorer(container, result) {
           adjusted ? (100 * adjusted[j]).toFixed(1) + "%" : "No model reach",
           ...(node.player === 0
             ? [node.ev[i]?.[j]?.toFixed(4) ?? "No model reach"]
+            : []),
+          ...(node.sizingEV
+            ? [node.sizingEV[i]?.[j]?.toFixed(4) ?? "No model reach"]
             : []),
         ]) {
           const td = document.createElement("td");

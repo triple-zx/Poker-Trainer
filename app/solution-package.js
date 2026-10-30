@@ -8,6 +8,7 @@ const scenarioFields = [
   "engine",
   "betting",
   "sizing",
+  "fullSizing",
 ];
 // Export only game settings and baseline policies. Journals, sampled cards,
 // cached EVs, and application/storage state never enter a shared package.

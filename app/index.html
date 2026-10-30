@@ -107,6 +107,79 @@
               >
                 Full-hand bet and raise sizes
               </summary>
+              <label
+                ><span data-en="Automatic size selection" data-zh="自动尺度选择"
+                  >Automatic size selection</span
+                >
+                <select name="fullSizingMode">
+                  <option
+                    value="off"
+                    data-en="Off · use all configured sizes"
+                    data-zh="关闭 · 使用全部配置尺度"
+                  >
+                    Off · use all configured sizes
+                  </option>
+                  <option
+                    value="fast"
+                    data-en="Fast · choose from candidates"
+                    data-zh="快速 · 从候选尺度中选择"
+                  >
+                    Fast · choose from candidates
+                  </option>
+                  <option
+                    value="deep"
+                    data-en="Deep · add and compare candidates"
+                    data-zh="深入 · 扩充并比较候选尺度"
+                  >
+                    Deep · add and compare candidates
+                  </option>
+                </select>
+              </label>
+              <div class="fields">
+                <label
+                  ><span
+                    data-en="Maximum retained bet sizes"
+                    data-zh="最多保留下注尺度"
+                    >Maximum retained bet sizes</span
+                  ><input
+                    name="fullMaxBets"
+                    type="number"
+                    min="1"
+                    max="3"
+                    step="1"
+                    value="1"
+                /></label>
+                <label
+                  ><span
+                    data-en="Maximum retained raise sizes"
+                    data-zh="最多保留加注尺度"
+                    >Maximum retained raise sizes</span
+                  ><input
+                    name="fullMaxRaises"
+                    type="number"
+                    min="1"
+                    max="3"
+                    step="1"
+                    value="1"
+                /></label>
+              </div>
+              <label
+                ><span
+                  data-en="Target simplification loss (bb)"
+                  data-zh="目标简化损失（大盲）"
+                  >Target simplification loss (bb)</span
+                ><input
+                  name="fullSizingLoss"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value="0.01"
+              /></label>
+              <p
+                class="hint"
+                data-en="Limits include all-in and apply to your strategy at each decision. All evaluated choices stay available during training. Deep adds finite midpoint and geometric candidates; larger trees take more time and may exceed the resource limit. Loss is measured against the same fixed opponent, not an adapting opponent."
+                data-zh="尺度上限包括全下，作用于玩家每个决策的策略。训练中仍可选择所有已计算尺度。深入模式增加有限的中点和几何候选尺度；较大的树需要更多时间，可能超过资源上限。损失针对同一固定对手测量，不代表对自适应对手的损失。"
+              ></p>
               <p
                 class="hint"
                 data-en="One or two percentages per street. Bets use the current pot; raises add the call plus a percentage of the pot after calling. All-in is also offered when legal. Four exact combos per player, stack-to-pot ratio up to 3. More choices increase precomputation time."
@@ -133,6 +206,7 @@
                   >River raises (%)<input name="riverRaises" value="100"
                 /></label>
               </div>
+              <p id="full-size-preview" class="hint"></p>
             </details>
           </article>
           <div class="columns">
