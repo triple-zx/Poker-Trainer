@@ -2,7 +2,7 @@
 
 A local postflop training and research app. English and Chinese interface. No account, cloud database, telemetry, or GPU required.
 
-Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions, automatic full-hand sizing, opponent tendencies and detailed edits, in-position play and conditional range analysis for the next release; use the developer setup below to run those changes now.
+Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions, automatic full-hand sizing, opponent tendencies and detailed edits, in-position play, conditional range analysis and saved-flop comparisons for the next release; use the developer setup below to run those changes now.
 
 ## Desktop application
 
@@ -49,6 +49,8 @@ Current full-hand limits: four exact combinations per player, zero rake, pot at 
 Full-hand sizing offers **Fast** selection from the configured candidates and **Deep** expansion with finite midpoint and geometric candidates. Set separate maximum retained bet/raise sizes and a target whole-hand EV loss. All-in counts toward the limits. The selected menus may differ at every hero decision, including later-street raises. Every evaluated action remains available during training, including alternatives outside the retained menu; review identifies them afterward.
 
 The app compares best-response EV with all candidates against the complete retained menus, using the same fixed opponent model. It tries smaller limits first and reports when the requested loss target is not met. Menu selection is a heuristic across public nodes, not a guarantee of globally optimal menus. Fixed-tree convergence, measured fixed-opponent simplification loss, and unknown loss versus untested sizes are separate. The deviation blend is projected onto retained menus; training EV scores still compare every candidate with unrestricted future continuation. Deep can exceed the tree/resource guards; it never silently drops requested branches. More general opponent edits, preflop libraries/solving and broad aggregation remain ongoing work. See [acceptance status](docs/implementation.md).
+
+In **Analysis → Compare saved flops**, select two or more complete solutions saved to your local library. Compare baseline or adjusted opening frequencies, both ranges' equity and hand strength, and best-response EV against each configured fixed opponent. Use equal weights or positive custom relative weights. These are weights for the selected sample, not deal probabilities or exhaustive flop coverage. Different ranges, positions, pot/stack, sizing settings or opponent assumptions stay in separate groups, with their settings and convergence status visible. Duplicate flops within one compatible group, missing solutions and stale library settings are rejected. The report loads one tree at a time in a background worker and can be cancelled; it needs no new solve and does not replace the active scenario. Best-response EV is separate from the selected mixed strategy's payoff.
 
 ## Legacy bounded flop laboratory
 

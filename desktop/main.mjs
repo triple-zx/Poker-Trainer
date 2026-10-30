@@ -200,16 +200,36 @@ else {
             worker.onmessage = ({data}) => { clearTimeout(timer); worker.terminate(); resolve(data.type === 'imported' && data.result === null && data.scenario.flop === ${JSON.stringify(scenario.flop)}); };
             worker.postMessage({type:'import', file:new File([${JSON.stringify(JSON.stringify({ schema: 1, scenario }))}], 'scenario.json', {type:'application/json'})});
           })`);
+          // A fresh smoke profile has no saved solutions. Reaching the explicit
+          // missing-solution response proves the worker can read IndexedDB on
+          // the private desktop origin, without touching the user's library.
+          const flopReportWorker =
+            await contents.executeJavaScript(`new Promise((resolve, reject) => {
+            const worker = new Worker('./flop-report-worker.js', {type:'module'});
+            const timer = setTimeout(() => { worker.terminate(); reject(Error('Flop report worker timeout')); }, 10000);
+            worker.onerror = (event) => { clearTimeout(timer); worker.terminate(); reject(Error(event.message)); };
+            worker.onmessage = ({data}) => {
+              if (data.type === 'progress') return;
+              clearTimeout(timer); worker.terminate();
+              resolve(data.type === 'error' && data.message.startsWith('smoke-a: No complete saved solution'));
+            };
+            worker.postMessage({profile:'baseline', weightMode:'equal', entries:[{name:'smoke-a'}, {name:'smoke-b'}]});
+          })`);
           console.log(
             JSON.stringify({
               desktopLoaded: ready,
               native: await solver.available(),
               nativeSolve: verified.gap < 0.001,
               packageWorker,
+              flopReportWorker,
               url: contents.getURL(),
             }),
           );
-          app.exit(ready && verified.gap < 0.001 && packageWorker ? 0 : 1);
+          app.exit(
+            ready && verified.gap < 0.001 && packageWorker && flopReportWorker
+              ? 0
+              : 1,
+          );
         }
       }
       app.on("activate", () => {
