@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { DEFAULT } from "../app/engine.js";
 import { convertFull, evaluateFull } from "../app/full-game.js";
 import { FullSession } from "../app/full-session.js";
@@ -9,6 +9,9 @@ import { run } from "./adapter.mjs";
 const scenario = {
   ...DEFAULT,
   game: "full",
+  ...(process.argv.includes("--ip")
+    ? { heroPosition: "ip", name: "In-position · native verification" }
+    : {}),
   hero: "AhKh",
   villain: "QcQd",
   iterations: 200,
@@ -19,6 +22,7 @@ const scenario = {
 const profile = await run(scenario),
   result = evaluateFull(convertFull(profile.raw, scenario), scenario);
 assert.ok(result.gap < 0.001, "Full-street independent Nash gap target");
+assert.equal(result.root.player, scenario.heroPosition === "ip" ? 1 : 0);
 assert.ok(
   Math.abs(result.gap - (profile.reportedPercent * scenario.pot) / 50) < 0.0001,
   "Independent and native gap agreement",
@@ -68,6 +72,7 @@ delete raw.childrens.CHECK;
 assert.throws(() => convertFull(raw, scenario), /Missing/);
 raw.childrens.CHECK = saved;
 const report = {
+  heroPosition: scenario.heroPosition || "oop",
   nodes,
   decisions,
   hands: 100,
@@ -78,6 +83,13 @@ const report = {
 };
 console.log(JSON.stringify(report));
 await writeFile(
-  "docs/benchmarks/full-hand.json",
+  `docs/benchmarks/full-hand${scenario.heroPosition === "ip" ? "-ip" : ""}.json`,
   JSON.stringify(report, null, 2) + "\n",
 );
+if (process.argv.includes("--export-fixture")) {
+  await mkdir(".native", { recursive: true });
+  await writeFile(
+    `.native/full-hand${scenario.heroPosition === "ip" ? "-ip" : ""}.json`,
+    JSON.stringify(solutionPackage(result)),
+  );
+}

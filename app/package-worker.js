@@ -24,7 +24,10 @@ self.onmessage = async ({ data }) => {
       if (!data.file || data.file.size > PACKAGE_LIMIT)
         throw Error("Package exceeds 128 MiB");
       const parsed = JSON.parse(await data.file.text());
-      if (parsed.schema === 1 && data.file.size > 1000000)
+      if (
+        (parsed.schema === 1 || parsed.type === "poker-trainer-scenario") &&
+        data.file.size > 1000000
+      )
         throw Error("Scenario package exceeds 1 MB");
       self.postMessage({ type: "imported", ...restorePackage(parsed) });
     } else throw Error("Unsupported package operation");

@@ -15,6 +15,7 @@ export function childPath(path, node, choice) {
 export function modelBasis(s) {
   const g = validate(s);
   return JSON.stringify({
+    ...(s.heroPosition === "ip" ? { heroPosition: "ip" } : {}),
     board: g.board ?? s.flop,
     ranges: [g.hero, g.villain].map((range) =>
       range.map((h) => [h.cards, h.weight]),
@@ -42,7 +43,11 @@ export function validateFullModel(s) {
       "Opponent edits belong to a different tree. Clear node edits or restore the previous board, ranges and sizes.",
     );
   for (const [path, rows] of Object.entries(m.locks)) {
-    if (!path.startsWith("root/") || !object(rows) || !Object.keys(rows).length)
+    if (
+      (path !== "root" && !path.startsWith("root/")) ||
+      !object(rows) ||
+      !Object.keys(rows).length
+    )
       throw Error("Invalid opponent decision edit");
     for (const row of Object.values(rows)) {
       if (

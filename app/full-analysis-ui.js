@@ -2,6 +2,7 @@ import { fullActionLabel, streetName } from "./full-game.js";
 import { cardName, validate } from "./engine.js";
 import { fullCandidates } from "./full-sizing.js";
 import { actionKey, childPath } from "./full-model.js";
+import { playerPosition } from "./positions.js";
 
 export function fullSizingReport(container, result, t = (en) => en) {
   const chosen = result.selection;
@@ -134,7 +135,11 @@ export function fullExplorer(
     }
     const actor = document.createElement("p");
     actor.textContent =
-      node.player === 0 ? "You · out of position" : "Opponent · in position";
+      (node.player === 0 ? t("You", "玩家") : t("Opponent", "对手")) +
+      " · " +
+      (playerPosition(result.scenario, node.player) === "oop"
+        ? t("out of position", "无位置")
+        : t("in position", "有位置"));
     section.append(actor);
     if (node.player === 0 && node.activeActions) {
       const menu = document.createElement("p");

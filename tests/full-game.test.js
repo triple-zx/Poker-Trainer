@@ -49,6 +49,31 @@ test("full trees request all streets and validate resource bounds", () => {
   assert.throws(() => validateFull({ ...s, betting: {} }));
   assert.throws(() => convertFull({}, s));
 });
+
+test("in-position hero follows the opponent on every street and native ranges keep their seats", () => {
+  const ip = { ...s, heroPosition: "ip" };
+  let state = initialState(ip);
+  assert.equal(state.player, 1);
+  state = transition(ip, state, { kind: "CHECK" });
+  assert.equal(state.player, 0);
+  state = transition(ip, state, { kind: "CHECK" });
+  state = nextStreet(state, cards("Td")[0]);
+  assert.equal(state.player, 1);
+  state = transition(ip, state, { kind: "BET", amount: 3 });
+  assert.equal(state.player, 0);
+  state = transition(ip, state, { kind: "RAISE", amount: 6 });
+  state = transition(ip, state, { kind: "CALL" });
+  assert.deepEqual(state.spent, [6, 6]);
+  state = nextStreet(state, cards("Js")[0]);
+  assert.equal(state.player, 1);
+  assert.match(commands(ip), /set_range_oop QcQd:1/);
+  assert.match(commands(ip), /set_range_ip AhKh:1/);
+  assert.throws(
+    () => validateFull({ ...ip, heroPosition: "button" }),
+    /position/,
+  );
+  assert.throws(() => commands({ ...ip, game: "bounded" }), /full-hand/);
+});
 test("all-in equity agrees with exhaustive flop enumeration and handles a river tie", () => {
   const h = cards("AhKh"),
     v = cards("QcQd"),

@@ -108,6 +108,27 @@
                 Full-hand bet and raise sizes
               </summary>
               <label
+                ><span data-en="Your postflop position" data-zh="玩家翻后位置"
+                  >Your postflop position</span
+                >
+                <select name="heroPosition">
+                  <option
+                    value="oop"
+                    data-en="Out of position · act first each street"
+                    data-zh="无位置 · 每条街先行动"
+                  >
+                    Out of position · act first each street
+                  </option>
+                  <option
+                    value="ip"
+                    data-en="In position · opponent acts first"
+                    data-zh="有位置 · 对手先行动"
+                  >
+                    In position · opponent acts first
+                  </option>
+                </select>
+              </label>
+              <label
                 ><span data-en="Automatic size selection" data-zh="自动尺度选择"
                   >Automatic size selection</span
                 >
@@ -281,8 +302,8 @@
               </div>
               <p
                 class="hint"
-                data-en="Rake is charged on every terminal pot, including folds. A zero cap means no rake. Hero is out of position; opponent is in position."
-                data-zh="所有终局底池（含弃牌）均计抽水。上限为零表示无抽水。玩家无位置，对手有位置。"
+                data-en="Rake is charged on every terminal pot, including folds. A zero cap means no rake. Full-hand mode currently requires zero rake."
+                data-zh="所有终局底池（含弃牌）均计抽水。上限为零表示无抽水。全手牌模式目前要求零抽水。"
               ></p>
               <label
                 ><span
@@ -316,12 +337,10 @@
                 data-zh="输入具体组合，用逗号分隔；冒号后可填权重，如 AhKh:0.5。全手牌模式每方最多四个组合；有限行动练习最多 12 个。不得与翻牌重叠。示例为人工构造，并非翻前图表。"
               ></p>
               <label
-                ><span data-en="Hero · OOP" data-zh="玩家 · 无位置"
-                  >Hero · OOP</span
+                ><span id="hero-range-label">Hero · OOP</span
                 ><textarea name="hero" required rows="3"></textarea></label
               ><label
-                ><span data-en="Opponent · IP" data-zh="对手 · 有位置"
-                  >Opponent · IP</span
+                ><span id="opponent-range-label">Opponent · IP</span
                 ><textarea name="villain" required rows="3"></textarea></label
               ><label
                 ><span
@@ -484,23 +503,11 @@
       <section id="train" class="pane" hidden>
         <div class="training">
           <div class="table">
-            <p
-              class="eyebrow"
-              data-en="OPPONENT · IN POSITION"
-              data-zh="对手 · 有位置"
-            >
-              OPPONENT · IN POSITION
-            </p>
+            <p class="eyebrow" id="opponent-seat">OPPONENT · IN POSITION</p>
             <div id="opponent" class="cards"></div>
             <p id="pot-display"></p>
             <div id="board" class="cards"></div>
-            <p
-              class="eyebrow"
-              data-en="YOU · OUT OF POSITION"
-              data-zh="玩家 · 无位置"
-            >
-              YOU · OUT OF POSITION
-            </p>
+            <p class="eyebrow" id="hero-seat">YOU · OUT OF POSITION</p>
             <div id="hero-cards" class="cards"></div>
             <ol
               id="action-history"

@@ -11,6 +11,7 @@ const scenarioFields = [
   "sizing",
   "fullSizing",
   "fullModel",
+  "heroPosition",
 ];
 // Export only game settings and baseline policies. Journals, sampled cards,
 // cached EVs, and application/storage state never enter a shared package.
@@ -23,6 +24,7 @@ function scenarioCopy(s) {
     ),
   );
   if (copy.game === "full") copy.engine = "native";
+  if (copy.heroPosition === "oop") delete copy.heroPosition;
   return copy;
 }
 export function sameScenario(a, b) {
@@ -38,6 +40,14 @@ export function sameScenario(a, b) {
         : value,
     );
   return canonical(a) === canonical(b);
+}
+const needsV3 = (s) => s.heroPosition === "ip" || !!s.fullModel;
+export function scenarioPackage(s, equities) {
+  const scenario = scenarioCopy(s);
+  if (scenario.game === "full") validateFull(scenario);
+  return needsV3(scenario)
+    ? { schema: 3, type: "poker-trainer-scenario", scenario }
+    : { schema: 1, scenario, equities };
 }
 export function solutionPackage(result) {
   if (!result?.full || !result.ready)
@@ -69,13 +79,18 @@ export function solutionPackage(result) {
     };
   }
   return {
-    schema: 2,
+    schema: needsV3(scenario) ? 3 : 2,
     type: "poker-trainer-solution",
     scenario,
     tree: pack(result.root),
   };
 }
 export function restorePackage(data) {
+  if (data?.schema === 3 && data.type === "poker-trainer-scenario") {
+    const scenario = scenarioCopy(data.scenario);
+    validateFull(scenario);
+    return { scenario, result: null };
+  }
   if (data?.schema === 1) {
     const parsed = importPackage(data);
     const scenario = scenarioCopy(parsed.scenario);
@@ -83,7 +98,7 @@ export function restorePackage(data) {
     return { scenario, result: null };
   }
   if (
-    data?.schema !== 2 ||
+    ![2, 3].includes(data?.schema) ||
     data.type !== "poker-trainer-solution" ||
     !data.scenario
   )

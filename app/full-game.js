@@ -1,5 +1,6 @@
 import { validate, cards, cardName, rank7 } from "./engine.js";
 import { validateFullModel, modelLocks } from "./full-model.js";
+import { firstPlayer } from "./positions.js";
 import {
   validateFullSizing,
   fullCandidates,
@@ -58,7 +59,8 @@ export function initialState(s) {
     board: cards(s.flop),
     spent: [0, 0],
     street: [0, 0],
-    player: 0,
+    player: firstPlayer(s),
+    firstPlayer: firstPlayer(s),
     checks: 0,
     lastRaise: 1,
     raises: 0,
@@ -136,7 +138,7 @@ export function nextStreet(state, card) {
     type: "action",
     board: [...state.board, card],
     street: [0, 0],
-    player: 0,
+    player: state.firstPlayer ?? 0,
     checks: 0,
     lastRaise: 1,
     raises: 0,
@@ -211,7 +213,7 @@ export function convertFull(raw, s, { portable = false } = {}) {
       (portable
         ? data?.type !== "action"
         : data?.node_type !== "action_node" ||
-          data.player !== 1 - state.player) ||
+          data.player !== (state.player === firstPlayer(s) ? 1 : 0)) ||
       !Array.isArray(data.actions) ||
       !data.actions.length ||
       data.actions.length > 8

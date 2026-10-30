@@ -6,7 +6,11 @@ import { actionLabel, sizingReport } from "./sizing-ui.js";
 import { validateFull } from "./full-game.js";
 import { startFullTraining, fullReplay } from "./full-training-ui.js";
 import { solutionStore } from "./solution-store.js";
-import { sameScenario, PACKAGE_LIMIT } from "./solution-package.js";
+import {
+  sameScenario,
+  scenarioPackage,
+  PACKAGE_LIMIT,
+} from "./solution-package.js";
 import {
   fullExplorer,
   fullFrequencyReport,
@@ -14,6 +18,7 @@ import {
 } from "./full-analysis-ui.js";
 import { fullCandidates } from "./full-sizing.js";
 import { modelBasis, editFullModel } from "./full-model.js";
+import { playerPosition } from "./positions.js";
 import {
   DEFAULT,
   cards,
@@ -82,6 +87,7 @@ function read() {
       ]),
     );
   }
+  if (s.game !== "full" || s.heroPosition === "oop") delete s.heroPosition;
   if (s.game !== "full" && s.sizingMode !== "allin")
     s.sizing = {
       mode: s.sizingMode,
@@ -125,6 +131,7 @@ function fill(s) {
     iterations.append(option);
   }
   form.elements.game.value = s.game || "bounded";
+  form.elements.heroPosition.value = s.heroPosition || "oop";
   form.elements.fullSizingMode.value = s.fullSizing?.mode || "off";
   form.elements.fullMaxBets.value = s.fullSizing?.maxBets || 1;
   form.elements.fullMaxRaises.value = s.fullSizing?.maxRaises || 1;
@@ -155,6 +162,9 @@ function fill(s) {
 }
 function formatControls() {
   const full = form.elements.game.value === "full";
+  form.elements.heroPosition.disabled = !full;
+  if (!full) form.elements.heroPosition.value = "oop";
+  positionLabels();
   $("#model-edits").hidden = !full;
   $("#model-edit-count").textContent = t(
     `${Object.keys(fullModel?.locks || {}).length} opponent decisions edited`,
@@ -168,6 +178,23 @@ function formatControls() {
   for (const name of ["fullMaxBets", "fullMaxRaises", "fullSizingLoss"])
     form.elements[name].disabled =
       !full || form.elements.fullSizingMode.value === "off";
+}
+function positionLabels() {
+  const s = { heroPosition: form.elements.heroPosition.value };
+  const hero = playerPosition(s, 0) === "ip",
+    opponent = !hero;
+  $("#hero-range-label").textContent = hero
+    ? t("Hero · IP", "玩家 · 有位置")
+    : t("Hero · OOP", "玩家 · 无位置");
+  $("#opponent-range-label").textContent = opponent
+    ? t("Opponent · IP", "对手 · 有位置")
+    : t("Opponent · OOP", "对手 · 无位置");
+  $("#hero-seat").textContent = hero
+    ? t("YOU · IN POSITION", "玩家 · 有位置")
+    : t("YOU · OUT OF POSITION", "玩家 · 无位置");
+  $("#opponent-seat").textContent = opponent
+    ? t("OPPONENT · IN POSITION", "对手 · 有位置")
+    : t("OPPONENT · OUT OF POSITION", "对手 · 无位置");
 }
 function save() {
   try {
@@ -221,6 +248,7 @@ function translate() {
     .querySelectorAll("[data-en]")
     .forEach((e) => (e.textContent = e.dataset[lang]));
   $("#language").textContent = lang === "en" ? "中文" : "English";
+  positionLabels();
   refreshTarget();
   analysis();
   history();
@@ -430,11 +458,12 @@ function download(obj, filename = "poker-scenario.json") {
 $("#export").onclick = () => {
   try {
     const s = read();
-    download({
-      schema: 1,
-      scenario: s,
-      equities: result && sameScenario(s, jobScenario) ? result.eq : undefined,
-    });
+    download(
+      scenarioPackage(
+        s,
+        result && sameScenario(s, jobScenario) ? result.eq : undefined,
+      ),
+    );
     msg(
       "Exported without personal training records.",
       "已导出，不含个人训练记录。",
@@ -737,7 +766,7 @@ function analysis() {
     g = validate(s);
   if (result.full) {
     el.innerHTML =
-      `<div class="report"><h2>${esc(s.name)}</h2><p>Flop → turn → river · ${result.nodes.toLocaleString()} verified nodes · ${result.coverage.toLocaleString()} compatible ordered runouts</p><p class="metric">${result.gap.toFixed(5)} bb</p><p>Independently measured baseline Nash gap within the configured tree. Every offered action has an evaluated continuation. EV loss uses the best continuation against the fixed opponent model. Untested sizes and trees with more raises remain outside this comparison.</p><p>Calling tendency preserves the relative weights of non-call actions. Detailed opponent edits replace the complete action distribution for one combination at one decision. The deviation slider blends the baseline with the best response; it is not a robustness guarantee.</p><table><thead><tr><th>Hero</th><th>Root action EVs</th></tr></thead><tbody>${g.hero.map((h, i) => `<tr><td>${h.label}</td><td>${result.root.ev[i]?.map((v, a) => `${esc(result.root.actions[a].kind)}${result.root.actions[a].amount ? " " + result.root.actions[a].amount + " bb" : ""}: ${v.toFixed(4)}`).join(" · ") || "No compatible deals"}</td></tr>`).join("")}</tbody></table></div>` +
+      `<div class="report"><h2>${esc(s.name)}</h2><p>Flop → turn → river · ${result.nodes.toLocaleString()} verified nodes · ${result.coverage.toLocaleString()} compatible ordered runouts</p><p class="metric">${result.gap.toFixed(5)} bb</p><p>Independently measured baseline Nash gap within the configured tree. Every offered action has an evaluated continuation. EV loss uses the best continuation against the fixed opponent model. Untested sizes and trees with more raises remain outside this comparison.</p><p>Calling tendency preserves the relative weights of non-call actions. Detailed opponent edits replace the complete action distribution for one combination at one decision. The deviation slider blends the baseline with the best response; it is not a robustness guarantee.</p>${result.root.player === 1 ? `<p>${t("You are in position. The opponent acts first; explore their action to inspect your response EVs.", "玩家有位置，对手先行动；选择对手动作以查看回应 EV。")} ${t("Range best-response EV against this model", "对此模型的范围最佳回应 EV")}: ${result.modelEV.toFixed(4)} bb</p>` : ""}${result.root.player === 0 ? `<table><thead><tr><th>Hero</th><th>Root action EVs</th></tr></thead><tbody>${g.hero.map((h, i) => `<tr><td>${h.label}</td><td>${result.root.ev?.[i]?.map((v, a) => `${esc(result.root.actions[a].kind)}${result.root.actions[a].amount ? " " + result.root.actions[a].amount + " bb" : ""}: ${v.toFixed(4)}`).join(" · ") || "No compatible deals"}</td></tr>`).join("")}</tbody></table>` : ""}</div>` +
       equityReport(g, result.eq, t, esc);
     el.insertAdjacentHTML(
       "beforeend",

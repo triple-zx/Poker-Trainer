@@ -12,6 +12,7 @@ import {
   restorePackage,
   sameScenario,
   remodelSolution,
+  scenarioPackage,
 } from "../app/solution-package.js";
 import {
   editFullModel,
@@ -73,6 +74,60 @@ const exported = JSON.stringify(
   solutionPackage({ ...original, records: [{ secret: "personal journal" }] }),
 );
 
+test("in-position packages keep actor/range identity, root opponent edits and all-street training", () => {
+  // Same physical game: swap logical hero/opponent, leave the physical policies intact.
+  const data = JSON.parse(exported);
+  data.scenario = {
+    ...scenario,
+    heroPosition: "ip",
+    hero: scenario.villain,
+    villain: scenario.hero,
+  };
+  const ip = restorePackage(data).result;
+  assert.equal(ip.root.player, 1);
+  assert.equal(ip.root.children[0].player, 0);
+  assert.ok(Math.abs(ip.gap - original.gap) < 1e-12);
+  assert.ok(sameScenario(scenario, { ...scenario, heroPosition: "oop" }));
+  assert.equal(
+    sameScenario(scenario, { ...scenario, heroPosition: "ip" }),
+    false,
+  );
+  assert.throws(
+    () => remodelSolution(original, { ...scenario, heroPosition: "ip" }),
+    /new baseline/,
+  );
+  const edited = editFullModel(ip.scenario, "root", "AhKh", {
+    CHECK: 1,
+    "BET:1": 0,
+  });
+  const updated = remodelSolution(ip, edited).result;
+  assert.deepEqual(updated.root.model, [[1, 0]]);
+  const restored = restorePackage(solutionPackage(updated)).result;
+  assert.deepEqual(restored.root.model, [[1, 0]]);
+  assert.equal(restored.scenario.heroPosition, "ip");
+  assert.equal(solutionPackage(restored).schema, 3);
+  const scenarioOnly = scenarioPackage(restored.scenario);
+  assert.equal(scenarioOnly.schema, 3);
+  assert.equal(restorePackage(scenarioOnly).result, null);
+  assert.ok(
+    sameScenario(restorePackage(scenarioOnly).scenario, restored.scenario),
+  );
+  assert.equal(solutionPackage(original).schema, 2);
+  assert.equal(scenarioPackage(scenario).schema, 1);
+  const session = new FullSession(restored, null, () => 0);
+  for (const street of ["Flop", "Turn", "River"]) {
+    assert.equal(session.node.player, 1);
+    assert.match(session.advance().text, /Opponent · Check/);
+    assert.equal(session.advance(), null);
+    session.choose(0);
+    assert.equal(session.decisions.at(-1).street, street);
+    assert.ok(session.decisions.at(-1).ev.every(Number.isFinite));
+    session.advance();
+  }
+  assert.equal(session.finished, true);
+  assert.equal(session.decisions.length, 3);
+});
+
 test("opponent edits reuse baseline, preserve unrelated decisions and survive sharing", () => {
   const path = "root/a:CHECK";
   const edited = editFullModel(scenario, path, "QcQd", {
@@ -87,6 +142,7 @@ test("opponent edits reuse baseline, preserve unrelated decisions and survive sh
   assert.deepEqual(original.root.children[0].model[0], [0.5, 0.5]);
   assert.equal(sameScenario(scenario, edited), false);
   const restored = restorePackage(solutionPackage(result)).result;
+  assert.equal(solutionPackage(result).schema, 3);
   assert.equal(restored.modelEV, result.modelEV);
   assert.deepEqual(restored.scenario.fullModel, edited.fullModel);
   const cleared = editFullModel(edited, path, "QcQd", null);

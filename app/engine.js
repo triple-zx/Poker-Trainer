@@ -1,4 +1,5 @@
 import { validateSizing } from "./sizing-config.js";
+import { validatePosition } from "./positions.js";
 export const RANKS = "23456789TJQKA",
   SUITS = "cdhs";
 export const DEFAULT = {
@@ -53,6 +54,7 @@ export function range(text, board) {
 }
 export function validate(s) {
   if (!s || typeof s !== "object") throw Error("Invalid scenario");
+  validatePosition(s);
   const board = cards(s.flop);
   if (board.length !== 3) throw Error("Choose exactly three flop cards");
   const hero = range(s.hero, board),
