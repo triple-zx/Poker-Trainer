@@ -3,6 +3,10 @@ import { practiceGroups, recordActions } from "./analytics.js";
 import { equityReport, frequencyReport, replayHand } from "./analytics-ui.js";
 import { solveSized, betAmounts } from "./sizing.js";
 import { actionLabel, sizingReport } from "./sizing-ui.js";
+import { validateFull } from "./full-game.js";
+import { startFullTraining, fullReplay } from "./full-training-ui.js";
+import { solutionStore } from "./solution-store.js";
+import { fullExplorer, fullFrequencyReport } from "./full-analysis-ui.js";
 import {
   DEFAULT,
   cards,
@@ -30,6 +34,7 @@ let lang = "en",
   filter = false,
   controller = null,
   runId = 0;
+let fullTraining = null;
 const t = (en, zh) => (lang === "en" ? en : zh);
 const msg = (en, zh = en) => ($("#status").textContent = t(en, zh));
 function read() {
@@ -46,7 +51,19 @@ function read() {
   ])
     s[k] = Number(s[k]);
   s.overrides = JSON.parse(s.overrides || "{}");
-  if (s.sizingMode !== "allin")
+  if (s.game === "full") {
+    s.engine = "native";
+    s.betting = Object.fromEntries(
+      ["flop", "turn", "river"].map((street) => [
+        street,
+        {
+          bet: s[street + "Bets"].split(",").map(Number),
+          raise: s[street + "Raises"].split(",").map(Number),
+        },
+      ]),
+    );
+  }
+  if (s.game !== "full" && s.sizingMode !== "allin")
     s.sizing = {
       mode: s.sizingMode,
       candidates: s.sizingCandidates.split(",").map(Number),
@@ -62,11 +79,25 @@ function read() {
     "nodeOverrides",
   ])
     delete s[field];
+  for (const street of ["flop", "turn", "river"]) {
+    delete s[street + "Bets"];
+    delete s[street + "Raises"];
+  }
   validate(s);
+  if (s.game === "full") validateFull(s);
   betAmounts(s);
   return s;
 }
 function fill(s) {
+  form.elements.game.value = s.game || "bounded";
+  for (const street of ["flop", "turn", "river"]) {
+    form.elements[street + "Bets"].value = (
+      s.betting?.[street]?.bet || [33, 75]
+    ).join(",");
+    form.elements[street + "Raises"].value = (
+      s.betting?.[street]?.raise || [100]
+    ).join(",");
+  }
   form.elements.sizingMode.value = s.sizing?.mode || "allin";
   form.elements.sizingCandidates.value = (
     s.sizing?.candidates || [33, 75]
@@ -80,6 +111,14 @@ function fill(s) {
   for (const [k, v] of Object.entries(s))
     if (form.elements[k])
       form.elements[k].value = k === "overrides" ? JSON.stringify(v) : v;
+  formatControls();
+}
+function formatControls() {
+  const full = form.elements.game.value === "full";
+  $("#full-settings").hidden = !full;
+  $("#bounded-settings").hidden = full;
+  $("#engine").disabled = full;
+  if (full) $("#engine").value = "native";
 }
 function save() {
   try {
@@ -88,8 +127,11 @@ function save() {
       JSON.stringify({
         schema: 1,
         scenario: jobScenario || read(),
-        equities: checkpoint,
-        result: !!result,
+        equities:
+          (jobScenario || result?.scenario)?.game === "full"
+            ? undefined
+            : checkpoint,
+        result: !!result && !result.full,
         nativeProfile: result?.nativeProfile,
         records,
         lang,
@@ -103,11 +145,17 @@ function save() {
   }
 }
 function show(tab) {
-  if (hand && (tab === "analysis" || tab === "history")) {
+  if (
+    hand &&
+    (tab === "analysis" ||
+      tab === "history" ||
+      (fullTraining && tab === "setup"))
+  ) {
     msg("Finish the hand before opening analysis.", "请先完成本手再查看分析。");
     return;
   }
   document.querySelectorAll(".pane").forEach((p) => (p.hidden = p.id !== tab));
+  document.body.dataset.view = tab;
   document
     .querySelectorAll("[data-tab]")
     .forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
@@ -134,6 +182,8 @@ $("#language").onclick = () => {
   save();
 };
 async function start(s, resume = false) {
+  fullTraining?.cancel();
+  fullTraining = null;
   const token = ++runId;
   controller?.abort();
   controller = null;
@@ -151,6 +201,14 @@ async function start(s, resume = false) {
   if (s.engine === "native") {
     controller = new AbortController();
     msg("TexasSolver is computing the baseline…", "TexasSolver 正在计算基线…");
+    const started = Date.now(),
+      tick = setInterval(() => {
+        if (token === runId)
+          msg(
+            `Computing ${s.game === "full" ? "flop, turn and river" : "the baseline"} · ${Math.floor((Date.now() - started) / 1000)} seconds elapsed. You can stop and restart this run.`,
+            `正在计算 · 已用时 ${Math.floor((Date.now() - started) / 1000)} 秒。可停止并重新开始。`,
+          );
+      }, 1000);
     try {
       const data = await nativeSolve(s, controller.signal);
       if (token !== runId) return;
@@ -161,11 +219,18 @@ async function start(s, resume = false) {
         msg(e.message);
       }
       return;
+    } finally {
+      clearInterval(tick);
     }
   }
   if (token !== runId) return;
   worker = new Worker("./worker.js", { type: "module" });
-  msg("Computing all legal runouts…", "正在计算全部合法发牌…");
+  msg(
+    s.game === "full"
+      ? "Validating every street and evaluating decision EVs…"
+      : "Computing all legal runouts…",
+    "正在验证发牌与决策 EV…",
+  );
   const g = validate(s);
   $("#progress").max = g.pairs.length;
   $("#progress").value = checkpoint.length;
@@ -181,6 +246,10 @@ async function start(s, resume = false) {
     }
     if (data.type === "result") {
       result = data.result;
+      if (result.full)
+        solutionStore("current", result).catch((e) =>
+          msg("Solution could not be saved: " + e.message),
+        );
       stop();
       save();
       reportStatus();
@@ -211,7 +280,7 @@ function stop() {
 function reportStatus() {
   const met = result.gap <= 0.001;
   msg(
-    `Coverage complete · measured gap ${result.gap.toFixed(5)} bb · 0.001 bb precision target ${met ? "met" : "not met; increase iterations"}. Loss versus untested sizes is unknown.`,
+    `${result.full ? "Flop, turn and river · " + result.nodes.toLocaleString() + " verified nodes" : "Coverage complete"} · measured gap ${result.gap.toFixed(5)} bb · 0.001 bb precision target ${met ? "met" : "not met; increase iterations"}. Loss versus untested sizes is unknown.`,
     `覆盖完整 · 实测差距 ${result.gap.toFixed(5)} 大盲 · ${met ? "达到" : "未达到，请增加迭代"} 0.001 大盲精度目标。未测试尺度的损失未知。`,
   );
 }
@@ -228,8 +297,12 @@ $("#pause").onclick = () => {
   stop();
   save();
   msg(
-    "Paused. Completed hand pairs are saved; resume continues from the last pair.",
-    "已暂停。已完成的手牌对已保存，可继续计算。",
+    jobScenario?.game === "full"
+      ? "Stopped. Resume restarts full-tree precomputation; no native iteration checkpoint is saved."
+      : "Paused. Completed hand pairs are saved; resume continues from the last pair.",
+    jobScenario?.game === "full"
+      ? "已停止。继续将重新计算完整树，不保留原生迭代检查点。"
+      : "已暂停。已完成的手牌对已保存，可继续计算。",
   );
 };
 $("#resume").onclick = () => {
@@ -240,6 +313,9 @@ $("#resume").onclick = () => {
 };
 form.addEventListener("input", (e) => {
   if (e.target.id === "import") return;
+  formatControls();
+  fullTraining?.cancel();
+  fullTraining = null;
   worker?.terminate();
   worker = null;
   result = null;
@@ -349,6 +425,33 @@ $("#deal").onclick = () => {
     targeted: target !== "",
     practiceTarget: target,
   };
+  if (result.full) {
+    fullTraining?.cancel();
+    fullTraining = startFullTraining(result, sampling, {
+      cardHTML,
+      practiceTarget: target,
+      onFinish(record) {
+        records.unshift(record);
+        records = records.slice(0, 1000);
+        hand = null;
+        fullTraining = null;
+        save();
+        history();
+        reportStatus();
+      },
+      onError(e) {
+        hand = null;
+        fullTraining = null;
+        $("#deal").disabled = false;
+        msg(e.message);
+      },
+    });
+    $("#sampling-note").textContent = target
+      ? "Targeted practice · all applicable streets"
+      : "Full range · all applicable streets";
+    return;
+  }
+  $("#action-history").replaceChildren();
   $("#sampling-note").textContent = hand.targeted
     ? t(
         "Targeted practice: this changes the configured sampling distribution.",
@@ -372,7 +475,7 @@ function act(action) {
   if (
     !hand ||
     !result ||
-    (result.sized && !result.activeActions.includes(action))
+    (result.sized && !result.actions.map((_, i) => i).includes(action))
   )
     return;
   const s = result.scenario,
@@ -386,10 +489,7 @@ function act(action) {
           ? result.model[hand.j][action - 1]
           : result.model[hand.j]),
     ev = result.ev[hand.i],
-    loss =
-      Math.max(
-        ...(result.sized ? result.activeActions.map((a) => ev[a]) : ev),
-      ) - ev[action],
+    loss = Math.max(...ev) - ev[action],
     board = [...g.board, ...hand.runout],
     a = rank7([...h.cards, ...board]),
     b = rank7([...v.cards, ...board]);
@@ -478,6 +578,17 @@ function analysis() {
   }
   const s = result.scenario,
     g = validate(s);
+  if (result.full) {
+    el.innerHTML =
+      `<div class="report"><h2>${esc(s.name)}</h2><p>Flop → turn → river · ${result.nodes.toLocaleString()} verified nodes · ${result.coverage.toLocaleString()} compatible ordered runouts</p><p class="metric">${result.gap.toFixed(5)} bb</p><p>Independently measured baseline Nash gap within the configured tree. Every offered action has an evaluated continuation. EV loss uses the best continuation against the fixed opponent model. Untested sizes and trees with more raises remain outside this comparison.</p><p>Opponent adjustments change call frequency while preserving the relative weights of other actions. The deviation slider blends the baseline with the best response; it is not a robustness guarantee.</p><table><thead><tr><th>Hero</th><th>Root action EVs</th></tr></thead><tbody>${g.hero.map((h, i) => `<tr><td>${h.label}</td><td>${result.root.ev[i]?.map((v, a) => `${esc(result.root.actions[a].kind)}${result.root.actions[a].amount ? " " + result.root.actions[a].amount + " bb" : ""}: ${v.toFixed(4)}`).join(" · ") || "No compatible deals"}</td></tr>`).join("")}</tbody></table></div>` +
+      equityReport(g, result.eq, t, esc);
+    el.insertAdjacentHTML(
+      "beforeend",
+      `<details class="report"><summary>${t("Range matrices", "范围矩阵")}</summary><h3>${t("You", "玩家")}</h3>${matrix(g.hero)}<h3>${t("Opponent", "对手")}</h3>${matrix(g.villain)}</details>`,
+    );
+    fullExplorer(el, result);
+    return;
+  }
   if (result.sized) {
     el.innerHTML =
       sizingReport(result, g, t, esc, matrix) +
@@ -490,15 +601,20 @@ function analysis() {
 function history() {
   const loss = records.reduce((a, r) => a + r.loss, 0);
   $("#stats").textContent =
-    `${records.length} ${t("hands", "手")} · ${t("Mean EV loss", "平均 EV 损失")} ${records.length ? (loss / records.length).toFixed(3) : "—"} bb · ${t("Observed bet rate (across recorded contexts)", "已记录场景下注率")} ${records.length ? ((100 * records.filter((r) => r.action > 0).length) / records.length).toFixed(1) : "—"}%`;
+    `${records.length} ${t("hands", "手")} · ${t("Mean total EV loss per hand", "每手平均总 EV 损失")} ${records.length ? (loss / records.length).toFixed(3) : "—"} bb · ${records.reduce((n, r) => n + (r.full ? r.decisions.length : 1), 0)} ${t("decisions", "次决策")}`;
   const el = $("#records");
-  el.innerHTML = frequencyReport(records, t, esc);
+  el.innerHTML = frequencyReport(
+    records.filter((r) => !r.full),
+    t,
+    esc,
+  );
+  fullFrequencyReport(el, records);
   records.forEach((r, i) => {
     if (filter && r.loss < 0.01 && !r.bookmark) return;
     const div = document.createElement("div");
     div.className = "record";
     const text = document.createElement("p");
-    text.textContent = `${r.scenario} · ${r.hero} / ${r.villain} · ${r.board} · ${r.action ? t("Bet", "下注") + " " + recordActions(r)[r.action] + " bb" : t("Check", "过牌")} · ${r.loss.toFixed(3)} bb`;
+    text.textContent = `${r.scenario} · ${r.hero} / ${r.villain} · ${r.board} · ${r.full ? r.decisions.length + " decisions" : r.action ? t("Bet", "下注") + " " + recordActions(r)[r.action] + " bb" : t("Check", "过牌")} · ${r.loss.toFixed(3)} bb`;
     const button = document.createElement("button");
     button.textContent = r.bookmark ? "★" : "☆";
     button.setAttribute("aria-label", t("Toggle bookmark", "切换书签"));
@@ -510,7 +626,11 @@ function history() {
     const replay = document.createElement("button");
     replay.textContent = t("Replay details", "复盘详情");
     replay.onclick = () => {
-      replayHand(div, r, t, cardHTML, cards);
+      (r.full ? fullReplay : replayHand)(
+        div,
+        r,
+        ...(r.full ? [cardHTML, cards] : [t, cardHTML, cards]),
+      );
       replay.disabled = true;
     };
     div.append(button, replay, text);
@@ -530,15 +650,21 @@ $("#all-history").onclick = () => {
   filter = false;
   history();
 };
-fill(DEFAULT);
+fill({ ...DEFAULT, game: "full", iterations: 1000 });
 try {
   const raw = localStorage.getItem(key);
   if (raw) {
     const saved = JSON.parse(raw),
-      p = importPackage(saved);
+      p = importPackage({ ...saved, equities: undefined });
     fill(p.scenario);
     jobScenario = p.scenario;
-    checkpoint = p.equities || [];
+    checkpoint = jobScenario.game === "full" ? [] : saved.equities || [];
+    if (
+      !Array.isArray(checkpoint) ||
+      checkpoint.length > validate(jobScenario).pairs.length ||
+      checkpoint.some((e) => !Number.isFinite(e) || e < 0 || e > 1)
+    )
+      throw Error("Invalid saved checkpoint");
     records = Array.isArray(saved.records)
       ? saved.records
           .filter(
@@ -552,6 +678,7 @@ try {
       : [];
     lang = saved.lang === "zh" ? "zh" : "en";
     if (
+      jobScenario.game !== "full" &&
       saved.result &&
       checkpoint.length === validate(jobScenario).pairs.length
     )
@@ -566,6 +693,25 @@ try {
   );
 }
 translate();
+if (jobScenario?.game === "full") {
+  const expected = JSON.stringify(jobScenario),
+    token = runId;
+  solutionStore("current")
+    .then((saved) => {
+      if (
+        token !== runId ||
+        !saved?.full ||
+        JSON.stringify(saved.scenario) !== expected
+      )
+        return;
+      result = saved;
+      $("#resume").disabled = true;
+      refreshTarget();
+      analysis();
+      reportStatus();
+    })
+    .catch((e) => msg("Saved solution could not be loaded: " + e.message));
+}
 
 engineInfo()
   .then((info) => {
@@ -624,7 +770,8 @@ try {
 } catch {}
 refreshLibrary();
 refreshTarget();
-$("#save-scenario").onclick = () => {
+$("#save-scenario").onclick = async () => {
+  $("#save-scenario").disabled = true;
   try {
     const scenario = read();
     library = {
@@ -632,19 +779,27 @@ $("#save-scenario").onclick = () => {
       [scenario.name]: {
         schema: 1,
         scenario,
-        equities: result?.eq || null,
+        equities: result?.full ? null : result?.eq || null,
         nativeProfile: result?.nativeProfile || null,
       },
     };
     localStorage.setItem(key + "-library", JSON.stringify(library));
     refreshLibrary();
     $("#library").value = scenario.name;
+    msg("Saving the complete solution…", "正在保存完整解…");
+    if (
+      result?.full &&
+      JSON.stringify(scenario) === JSON.stringify(result.scenario)
+    )
+      await solutionStore("library:" + scenario.name, result);
     msg("Scenario saved to your local library.", "场景已保存到本地库。");
   } catch (e) {
     msg(e.message);
+  } finally {
+    $("#save-scenario").disabled = false;
   }
 };
-$("#load-scenario").onclick = () => {
+$("#load-scenario").onclick = async () => {
   try {
     const saved = library[$("#library").value];
     if (!saved) throw Error("Choose a saved scenario");
@@ -653,15 +808,27 @@ $("#load-scenario").onclick = () => {
     hand = null;
     jobScenario = p.scenario;
     checkpoint = p.equities || [];
-    result = p.equities
-      ? solveScenario(jobScenario, checkpoint, saved.nativeProfile)
-      : null;
+    result =
+      p.scenario.game === "full"
+        ? await solutionStore("library:" + p.scenario.name)
+        : p.equities
+          ? solveScenario(jobScenario, checkpoint, saved.nativeProfile)
+          : null;
+    if (
+      result &&
+      JSON.stringify(result.scenario) !== JSON.stringify(jobScenario)
+    )
+      result = null;
     fill(jobScenario);
     $("#deal").disabled = false;
     $("#check").disabled = $("#shove").disabled = true;
     refreshTarget();
     analysis();
     save();
+    if (result?.full)
+      solutionStore("current", result).catch((e) =>
+        msg("Solution could not be saved: " + e.message),
+      );
     msg("Scenario loaded.", "场景已加载。");
   } catch (e) {
     msg(e.message);
@@ -669,12 +836,17 @@ $("#load-scenario").onclick = () => {
 };
 
 function refreshActions() {
+  if (result?.full) {
+    $("#check").hidden = $("#shove").hidden = true;
+    if (!fullTraining) $("#sized-actions").replaceChildren();
+    return;
+  }
   const sized = !!result?.sized;
   $("#check").hidden = $("#shove").hidden = sized;
   const box = $("#sized-actions");
   box.replaceChildren();
   if (sized)
-    for (const a of result.activeActions) {
+    for (const a of result.actions.map((_, i) => i)) {
       const button = document.createElement("button");
       button.textContent = actionLabel(result, a, t);
       button.disabled = !hand;
@@ -691,6 +863,9 @@ form.addEventListener("input", () => {
       betAmounts(s).join(", ") +
       t(" · Exact runouts: ", " · 精确发牌数：") +
       g.pairs.length * 990;
+    if (s.game === "full")
+      $("#size-preview").textContent =
+        "Full-hand tree · all-in plus configured street sizes · native C++ precomputation";
   } catch (e) {
     $("#size-preview").textContent = e.message;
   }

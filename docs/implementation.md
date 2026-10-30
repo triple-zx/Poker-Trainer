@@ -4,7 +4,21 @@ Date: 2026-10-30. Requirements remain in `requirements.md`.
 
 ## Architecture and precise semantics
 
-Local Node server plus dependency-free browser application. A Web Worker isolates exact equity enumeration from interaction. Native C++ baseline runs in a separate process; a pure JavaScript regret-matching implementation provides an independent bounded-game reference. Source and diagnostics are reproducible. No GPU dependency.
+Installable Electron desktop application with a private local origin, isolated preload bridge and a bundled C++ solver. An optional local HTTP preview is for development. A Web Worker isolates validation and independent EV evaluation from interaction. A pure JavaScript regret-matching implementation remains an independent bounded-game reference. Source and diagnostics are reproducible. No GPU dependency.
+
+### Full-hand mode
+
+Hero OOP acts on every applicable street. Both players can check, bet, call, fold and raise within the configured per-street menus, including all-ins. The native tree has a limit of three raises after an initial bet. The converter derives contributions, call gaps, minimum raises, terminal states and street resets independently. Every configured size and every compatible chance child must exist; only rule-derived terminal children may be absent from the native export. Illegal private/public card collisions are excluded.
+
+Best-response evaluation propagates counterfactual opponent reach, sums hidden hands before choosing an action, and conditions chance probabilities on both private hands. Initial-pot EVs sum to the initial pot. The zero-rake Nash gap is the sum of the two best-response values minus the initial pot. Hero decision EVs use optimal future continuation against the fixed opponent model. Impossible opponent-model histories display no model reach. Individual scores compare all offered actions, including sizes with zero target frequency. Full-hand frequency groups separate public action history, board, private hand, exact scenario and sampling target.
+
+Animated training traverses only the saved tree, pauses on each hero decision and keeps opponent cards and EV feedback hidden until completion. Check-through hands still pause on turn and river. All-in runouts animate without requesting unavailable actions; folds do not reveal unused cards. Per-decision review and public-action replay are recorded in the journal. Large complete trees use IndexedDB and restore without recomputation; exported scenarios currently require recomputation.
+
+Full-hand resource guards: four exact combos per player, one or two bet and raise percentages per street, pot >=4 bb, stack >=1 bb, SPR <=3, zero rake, 600,000 validated nodes and 256 MB native export. Native solving has a 30-minute limit and up to four threads. Requested native accuracy corresponds to a 0.001 bb Nash gap, but the independently measured final gap determines the displayed precision status. A completed tree can be nonconverged. No global action-restriction or robustness bound is claimed.
+
+Full-tree regression verifies native/independent gap agreement, all three streets with raises, rejection of missing legal branches, and 100 simulated hands. A two-bet-per-street 1v1 fixture produced 378,438 nodes and a 0.00005836 bb gap. The 3x3 default-range diagnostic at 500 iterations took 255.9 seconds with one thread and produced a 0.050765 bb gap; it did not meet precision. These measurements are different inputs and are not an efficiency comparison.
+
+### Legacy bounded mode
 
 Version 0.1 addresses a bounded scenario family, not arbitrary no-limit play. Hero is OOP at a fixed flop. Aggression is either an all-in or one of the configured/selected bet sizes. Checking commits both players to a check-down. A call commits both players to a check-down; folds are terminal. Thus all choices exposed during training have complete saved equity coverage; there are no unsolved turn/river actions disguised as ready.
 
@@ -26,11 +40,11 @@ Resource bound: 12 exact combinations per player, at most 144 equity entries / 1
 - Implemented: local storage, scenario export/import without journal leakage, English/Chinese primary interface.
 - Implemented: equity checkpoints by completed pair. Native computation can be canceled but restarts its baseline stage; no native iteration checkpoint claim.
 - Implemented: native build, runnable C++ adapter, numerical cross-check on a synthetic fixture. Six differential fixtures passed, including fractional fast sizes and deep midpoint sizes; measured Windows runtimes are in docs/benchmarks/native.json. Larger-tree performance is still unmeasured.
-- Implemented: finite fast/deep size search, size cap and fixed-model best-response simplification loss, including explicit unmet-target reporting; per-combo/per-bet call locks. Pending: generic multi-street trees, arbitrary node locks, hand-category tendency controls, preflop tendencies beyond manually edited ranges.
+- Implemented: finite fast/deep size search in bounded mode, size cap and fixed-model best-response simplification loss, including explicit unmet-target reporting; per-combo/per-bet call locks. Full-hand mode has explicit street menus. Pending: automatic full-tree simplification, arbitrary node locks, hand-category tendency controls, preflop tendencies beyond manually edited ranges.
 - Implemented: multiple saved scenarios in a local library, three-stage completed-hand replay, targeted exact-combo/category/draw sampling with explicit distribution labeling, and frequency calibration separated by full configuration, private hand and sampling mode.
 - Implemented: joint-weighted made-hand/draw composition, combo and range equity, and weighted card-removal overview. Pending: turn/river and multi-flop aggregation.
 - Pending: public preflop material acquisition and source/license review; no acquired GTO library claimed. Current fixture is synthetic and original.
-- Pending: independently computed preflop solutions; representative 8 GB Windows/macOS performance measurements and native macOS verification.
+- Implemented: native Windows/macOS packages, packaged startup/native-solve checks, and native macOS evaluator/differential verification. Pending: independently computed preflop solutions; representative 8 GB Windows/macOS performance measurements.
 
 ## Validation
 

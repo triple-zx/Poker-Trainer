@@ -1,7 +1,20 @@
 import { validate, equity, solve } from "./engine.js";
 import { solveSized } from "./sizing.js";
+import { convertFull, evaluateFull } from "./full-game.js";
 self.onmessage = ({ data }) => {
   try {
+    if (data.scenario.game === "full") {
+      if (!data.nativeProfile?.full)
+        throw Error("Full-hand training requires the native engine");
+      self.postMessage({
+        type: "result",
+        result: evaluateFull(
+          convertFull(data.nativeProfile.raw, data.scenario),
+          data.scenario,
+        ),
+      });
+      return;
+    }
     const g = validate(data.scenario),
       eq = data.checkpoint || [];
     if (

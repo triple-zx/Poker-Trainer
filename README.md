@@ -20,7 +20,17 @@ Create installers with `npm run desktop:dist`. Windows outputs an installer and 
 
 The optional browser preview is a development tool: `npm run preview`. App data uses a stable private app origin in the desktop profile, separate from browser-preview storage. Export/import scenarios when moving between those profiles.
 
-## Current milestone: bounded flop laboratory
+## Full-hand desktop training
+
+Full-hand mode precomputes flop, turn and river betting, calls, folds and raises. Choose one or two bet percentages and raise percentages for each street; legal all-ins are included. Training offers every evaluated size, including suboptimal choices. An animated action history explains how the hand reached each decision. Opponent cards and per-decision EV comparisons appear after the hand ends. Completed hands can be replayed and bookmarked.
+
+The full tree is independently checked for legal transitions, configured actions, compatible chance cards and complete private-combination strategies. Best responses aggregate the hidden opponent range before maximizing. Analysis can navigate the saved tree and compare baseline, modeled and adjusted policies. Complete solutions use IndexedDB; scenarios and the journal remain local. The desktop app and optional browser preview use separate profiles.
+
+Current full-hand limits: hero OOP, four exact combinations per player, zero rake, pot at least 4 bb, effective stack from 1 bb to three times the pot, at most three raises after the initial bet on a street. Native precomputation uses up to four CPU threads and a 30-minute timeout; tree exports are capped at 256 MB and validated trees at 600,000 nodes. These are capacity guards, not a measured 8 GB hardware guarantee. The displayed independent gap can remain above target after the iteration budget; coverage completion does not imply convergence. No claim is made about untested sizes.
+
+Automatic finite candidate pruning is currently available in the legacy bounded drill. Full-hand training uses explicit per-street menus; automatic full-tree simplification, more general opponent edits, preflop libraries/solving and broad aggregation remain ongoing work. See [acceptance status](docs/implementation.md).
+
+## Legacy bounded flop laboratory
 
 Set a fixed flop, exact weighted ranges (up to 12 combinations each), pot, effective stack, and opponent calling tendencies. Precompute, then practice repeated hands. Inspect baseline versus modeled play, action EVs, both range matrices, weighted equities, draw composition, card removal, bookmarks, and the decision journal. Practice selected combinations, made hands or draws, replay completed hands, and compare repeated action frequencies with their targets. The journal and latest solution stay in this browser's local storage. Export scenarios for portable backups; exports exclude personal training history. Imported equity data is recomputed before use.
 
@@ -28,9 +38,9 @@ The supported game is deliberately restricted: hero acts first and chooses **che
 
 The browser reference engine supports a stated rake convention (percentage of terminal pot, capped, including folds). The optional **TexasSolver C++ engine** supports zero rake. See [native setup and validation](native/README.md). Every native baseline is evaluated independently using exact runouts, and its measured deviation incentive is shown.
 
-This is an engineering milestone, **not completion of the entire requirements baseline**. General street-by-street betting, full preflop libraries/solving, broad scenario aggregation, and full multi-street play remain under development. See [implementation and acceptance status](docs/implementation.md) and the unchanged [requirements](docs/requirements.md).
+This is an engineering milestone, **not completion of the entire requirements baseline**. See [implementation and acceptance status](docs/implementation.md) and the unchanged [requirements](docs/requirements.md).
 
-## Use
+## Use the bounded drill
 
 1. Configure the flop and exact ranges, e.g. `AhKh:1,QhQd:0.5`.
 2. Set calling tendency: 0 preserves baseline, +1 always calls, −1 always folds. JSON overrides such as `{"AcQc":0.8}` take precedence for that combination.

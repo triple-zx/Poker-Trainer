@@ -10,7 +10,7 @@ body {
     sans-serif;
 }
 header {
-  height: 88px;
+  height: 64px;
   border-bottom: 1px solid #304039;
   display: flex;
   align-items: center;
@@ -218,6 +218,15 @@ footer {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 24px;
+  align-items: start;
+}
+body:not([data-view="setup"]) .intro,
+body:not([data-view="setup"]) .notice,
+body[data-view="train"] footer {
+  display: none;
+}
+body:not([data-view="setup"]) nav {
+  margin-top: 10px;
 }
 .table {
   min-height: 460px;
@@ -387,4 +396,51 @@ summary {
 }
 details[open] summary {
   margin-bottom: 12px;
+}
+.action-history {
+  max-height: 170px;
+  overflow: auto;
+  padding-left: 24px;
+  text-align: left;
+  max-width: 350px;
+  margin: 20px auto 0;
+}
+.action-history li {
+  padding: 8px 0;
+  color: #a7b8ae;
+}
+.action-history li:last-child {
+  color: #e3f4b7;
+  animation: action-arrives 0.45s ease-out;
+}
+#board .card {
+  animation: card-arrives 0.45s ease-out;
+}
+@keyframes action-arrives {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes card-arrives {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) rotate(-4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
 }

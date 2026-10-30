@@ -1,0 +1,9 @@
+{
+  "platform": "Windows, local development machine",
+  "fixture": "native/verify-full.mjs: AhKh vs QcQd, As7d2c, pot 10, stack 15, 50% bets, 100% raises and all-ins on every street",
+  "samples": [
+    {"threads": 1, "wallMs": 11859.312, "gapBb": 0.00003853031678779928},
+    {"threads": 4, "wallMs": 103530.1344, "gapBb": 0.00003853031678779928}
+  ],
+  "notes": "Single observations, not a hardware-wide benchmark. Same final policy gap, 114636 validated nodes and 100 training simulations. Requested native accuracy changed from 0.001% to 0.005%; both runs met either threshold at the same printed checkpoint. Keep one thread by default; TEXASSOLVER_THREADS remains available for measured workload-specific tuning."
+}
