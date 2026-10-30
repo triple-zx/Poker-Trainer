@@ -461,3 +461,11 @@ details[open] summary {
 .node-matrix .cell {
   white-space: pre-line;
 }
+.card-comparison {
+  max-height: 540px;
+}
+.card-comparison th {
+  position: sticky;
+  top: 0;
+  background: #17271f;
+}

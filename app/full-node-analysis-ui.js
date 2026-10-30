@@ -212,11 +212,13 @@ export function nodeRangePanel(container, result, path, options) {
       element("p", e.message, content);
     }
   }
+  // The explorer rebuilds both range and next-card reports with this profile.
   select.onchange = () => {
+    onOpen(details.open);
     onProfile(select.value);
-    render();
   };
   details.ontoggle = () => {
+    if (!details.isConnected) return;
     onOpen(details.open);
     if (details.open && !rendered) render();
   };

@@ -4,6 +4,7 @@ import { fullCandidates } from "./full-sizing.js";
 import { actionKey, childPath } from "./full-model.js";
 import { playerPosition } from "./positions.js";
 import { nodeRangePanel } from "./full-node-analysis-ui.js";
+import { nextCardPanel } from "./full-card-analysis-ui.js";
 
 export function fullSizingReport(container, result, t = (en) => en) {
   const chosen = result.selection;
@@ -71,7 +72,8 @@ export function fullExplorer(
     trail = [result.root],
     paths = ["root"];
   let rangeProfile = "model",
-    rangesOpen = false;
+    rangesOpen = false,
+    cardsOpen = false;
   const equityCache = new Map();
   for (const step of selectedPath.split("/").slice(1)) {
     const node = trail.at(-1);
@@ -93,7 +95,7 @@ export function fullExplorer(
     section.replaceChildren();
     const node = trail.at(-1);
     const title = document.createElement("h3");
-    title.textContent = "Explore the saved tree";
+    title.textContent = t("Explore the saved tree", "浏览已保存的策略树");
     const context = document.createElement("p");
     context.textContent = `${streetName(node.board)} · ${node.board.map(cardName).join(" ")} · pot ${(result.scenario.pot + node.spent[0] + node.spent[1]).toFixed(3)} bb`;
     section.append(title, context);
@@ -108,6 +110,7 @@ export function fullExplorer(
         },
         onProfile: (profile) => {
           rangeProfile = profile;
+          render();
         },
       });
     if (trail.length > 1) {
@@ -133,7 +136,7 @@ export function fullExplorer(
       history.append(summary, list);
       section.append(history);
       const back = document.createElement("button");
-      back.textContent = "← Previous node";
+      back.textContent = t("← Previous node", "← 上一个节点");
       back.onclick = () => {
         trail.pop();
         paths.pop();
@@ -154,7 +157,7 @@ export function fullExplorer(
     section.append(controls);
     if (node.type === "chance") {
       const label = document.createElement("label");
-      label.textContent = "Next board card";
+      label.textContent = t("Next board card", "下一张公共牌");
       const select = document.createElement("select");
       for (const c of Object.keys(node.children)) {
         const o = document.createElement("option");
@@ -163,14 +166,30 @@ export function fullExplorer(
         select.append(o);
       }
       const go = document.createElement("button");
-      go.textContent = "Inspect card →";
-      go.onclick = () => {
-        paths.push(childPath(paths.at(-1), node, select.value));
-        trail.push(node.children[select.value]);
+      go.textContent = t("Inspect card →", "查看公共牌 →");
+      const inspect = (card) => {
+        paths.push(childPath(paths.at(-1), node, card));
+        trail.push(node.children[card]);
         render();
       };
+      go.onclick = () => inspect(select.value);
       label.append(select);
       controls.append(label, go);
+      nextCardPanel(section, result, paths.at(-1), {
+        t,
+        node,
+        profile: rangeProfile,
+        open: cardsOpen,
+        cache: equityCache,
+        onOpen: (open) => {
+          cardsOpen = open;
+        },
+        onProfile: (profile) => {
+          rangeProfile = profile;
+          render();
+        },
+        onInspect: inspect,
+      });
       ranges();
       return;
     }
