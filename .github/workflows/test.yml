@@ -32,6 +32,7 @@ jobs:
       - run: node native/setup.mjs
       - run: node native/verify-evaluator.mjs
       - run: node native/benchmark.mjs
+      - run: node native/verify-full.mjs
       - run: node scripts/verify-evaluator.mjs
       - uses: actions/upload-artifact@v4
         with:

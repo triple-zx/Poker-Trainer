@@ -178,7 +178,9 @@ else {
             villain: "QcQd",
             iterations: 100,
           };
-          const profile = await solver.run(scenario);
+          const profile = await contents.executeJavaScript(
+            `window.desktopSolver.solve(${JSON.stringify(scenario)}, 'desktop-smoke')`,
+          );
           const game = validate(scenario);
           const verified = solve(
             scenario,

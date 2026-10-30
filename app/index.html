@@ -35,22 +35,22 @@
             Build a read. Test your edge.
           </h1>
           <p
-            data-en="One flop. Two ranges. A deliberate decision."
-            data-zh="一个翻牌，两组范围，一次深思熟虑的决策。"
+            data-en="Follow the hand. Choose your size. Review every decision."
+            data-zh="跟随牌局，选择尺度，复盘每次决策。"
           >
             One flop. Two ranges. A deliberate decision.
           </p>
         </div>
         <div class="version">
-          0.1<br /><span data-en="BOUNDED GAME" data-zh="有限行动模型"
+          0.3<br /><span data-en="FULL-STREET PRACTICE" data-zh="全街训练"
             >BOUNDED GAME</span
           >
         </div>
       </section>
       <aside
         class="notice"
-        data-en="Scope: hero acts first on the flop: check to showdown or bet a precomputed size; opponent folds or calls. No later betting. All legal runouts are covered. This is a restricted game, not full no-limit GTO. Loss versus untested legal sizes is unknown."
-        data-zh="范围：玩家翻牌先行动，可过牌到摊牌或按预计算尺度下注；对手弃牌或跟注。后续无下注。覆盖所有合法转牌和河牌。这是受限游戏，并非完整无限注 GTO。相对未测试合法尺度的损失未知。"
+        data-en="Full-hand mode includes betting and raising on flop, turn and river. Every displayed choice is precomputed, including weaker sizes. The configured tree covers all compatible runouts; loss against untested sizes is unknown. Legacy bounded drills remain available."
+        data-zh="全手牌模式支持翻牌、转牌和河牌的下注及加注。所有显示的选项均经过预计算，包括较差尺度。配置树覆盖全部合法发牌；未测试尺度的损失未知。亦可选择旧版有限行动练习。"
       ></aside>
       <nav>
         <button
@@ -90,6 +90,51 @@
           </button>
         </div>
         <form id="form">
+          <article>
+            <label
+              ><span data-en="Training format" data-zh="训练模式"
+                >Training format</span
+              >
+              <select name="game">
+                <option value="full">Full hand · flop, turn, river</option>
+                <option value="bounded">Bounded flop laboratory</option>
+              </select>
+            </label>
+            <details open id="full-settings">
+              <summary
+                data-en="Full-hand bet and raise sizes"
+                data-zh="全手牌下注和加注尺度"
+              >
+                Full-hand bet and raise sizes
+              </summary>
+              <p
+                class="hint"
+                data-en="One or two percentages per street. Bets use the current pot; raises add the call plus a percentage of the pot after calling. All-in is also offered when legal. Four exact combos per player, stack-to-pot ratio up to 3. More choices increase precomputation time."
+                data-zh="每街选择一到两个百分比。下注基于当前底池；加注额为跟注额加上跟注后底池的百分比。合法时也可全下。每方最多四个具体组合，筹码底池比不超过 3。更多选项需要更长预计算时间。"
+              ></p>
+              <div class="fields">
+                <label
+                  >Flop bets (%)<input name="flopBets" value="33,75" /></label
+                ><label
+                  >Flop raises (%)<input name="flopRaises" value="100"
+                /></label>
+              </div>
+              <div class="fields">
+                <label
+                  >Turn bets (%)<input name="turnBets" value="33,75" /></label
+                ><label
+                  >Turn raises (%)<input name="turnRaises" value="100"
+                /></label>
+              </div>
+              <div class="fields">
+                <label
+                  >River bets (%)<input name="riverBets" value="33,75" /></label
+                ><label
+                  >River raises (%)<input name="riverRaises" value="100"
+                /></label>
+              </div>
+            </details>
+          </article>
           <div class="columns">
             <article>
               <p class="eyebrow" data-en="THE SCENARIO" data-zh="场景">
@@ -160,6 +205,9 @@
                   data-zh="精度 · 遗憾迭代次数"
                   >Precision · regret iterations</span
                 ><select name="iterations">
+                  <option value="100">100 · quick diagnostic</option>
+                  <option value="500">500</option>
+                  <option value="1000">1,000</option>
                   <option value="10000">10,000</option>
                   <option value="50000">50,000</option>
                   <option value="100000">100,000</option>
@@ -179,8 +227,8 @@
               </h2>
               <p
                 class="hint"
-                data-en="Exact combinations, comma-separated. Optional weight after a colon: AhKh:0.5. Up to 12 combinations per player; no flop overlaps. The example is synthetic, not a preflop chart."
-                data-zh="输入具体组合，用逗号分隔；冒号后可填权重，如 AhKh:0.5。每人最多12个组合，不得与翻牌重叠。示例为人工构造，并非翻前图表。"
+                data-en="Exact combinations, comma-separated. Optional weight after a colon: AhKh:0.5. Full hands support four combos per player; bounded drills support 12. No flop overlaps. This example is synthetic, not a preflop chart."
+                data-zh="输入具体组合，用逗号分隔；冒号后可填权重，如 AhKh:0.5。全手牌模式每方最多四个组合；有限行动练习最多 12 个。不得与翻牌重叠。示例为人工构造，并非翻前图表。"
               ></p>
               <label
                 ><span data-en="Hero · OOP" data-zh="玩家 · 无位置"
@@ -192,8 +240,8 @@
                 ><textarea name="villain" required rows="3"></textarea></label
               ><label
                 ><span
-                  data-en="Calling tendency (−1 always folds, +1 always calls)"
-                  data-zh="跟注倾向（−1 总是弃牌，+1 总是跟注）"
+                  data-en="Calling tendency (−1 never calls, +1 always calls)"
+                  data-zh="跟注倾向（−1 从不跟注，+1 总是跟注）"
                   >Calling tendency (−1 always folds, +1 always calls)</span
                 ><input
                   name="tendency"
@@ -227,7 +275,7 @@
               /></label>
             </article>
           </div>
-          <article>
+          <article id="bounded-settings">
             <h2 data-en="Automatic sizing" data-zh="自动选择下注尺度">
               Automatic sizing
             </h2>
@@ -406,6 +454,15 @@
               </button>
             </div>
             <div id="sized-actions" class="toolbar"></div>
+            <button type="button" id="animation-speed" hidden>
+              Animation: on
+            </button>
+            <ol
+              id="action-history"
+              class="action-history"
+              aria-label="Hand action history"
+              aria-live="polite"
+            ></ol>
             <div id="feedback" aria-live="polite"></div>
           </div>
         </div>

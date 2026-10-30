@@ -1,11 +1,19 @@
 import { existsSync } from "node:fs";
 import { spawn } from "node:child_process";
-import { mkdtemp, writeFile, readFile, rm, access } from "node:fs/promises";
+import {
+  mkdtemp,
+  writeFile,
+  readFile,
+  rm,
+  access,
+  stat,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validate, cardName } from "../app/engine.js";
 import { betAmounts } from "../app/sizing-config.js";
+import { validateFull } from "../app/full-game.js";
 const bundled = fileURLToPath(
   new URL("../.native/TexasSolver/", import.meta.url),
 );
@@ -33,6 +41,7 @@ export async function available() {
 }
 export function commands(s) {
   const g = validate(s);
+  if (s.game === "full") validateFull(s);
   const scale = 1000,
     sizes = betAmounts(s);
   if (
@@ -53,8 +62,17 @@ export function commands(s) {
     `set_board ${g.board.map(cardName).join(",")}`,
     `set_range_oop ${g.hero.map((h) => h.label + ":" + h.weight).join(",")}`,
     `set_range_ip ${g.villain.map((h) => h.label + ":" + h.weight).join(",")}`,
-    "set_bet_sizes oop,flop,allin",
-    ...(s.sizing && sizes.some((x) => x < s.stack)
+    ...(s.game === "full"
+      ? ["oop", "ip"].flatMap((player) =>
+          ["flop", "turn", "river"].flatMap((street) => [
+            `set_bet_sizes ${player},${street},allin`,
+            `set_bet_sizes ${player},${street},bet,${s.betting[street].bet.join(",")}`,
+            `set_bet_sizes ${player},${street},donk,${s.betting[street].bet.join(",")}`,
+            `set_bet_sizes ${player},${street},raise,${s.betting[street].raise.join(",")}`,
+          ]),
+        )
+      : ["set_bet_sizes oop,flop,allin"]),
+    ...(s.game !== "full" && s.sizing && sizes.some((x) => x < s.stack)
       ? [
           `set_bet_sizes oop,flop,bet,${sizes
             .filter((x) => x < s.stack)
@@ -67,17 +85,19 @@ export function commands(s) {
     `set_allin_threshold ${2 + s.pot / s.stack}`,
     "build_tree",
     `set_thread_num ${Math.min(4, os.availableParallelism(), Math.max(1, Number(process.env.TEXASSOLVER_THREADS) || 1))}`,
-    "set_accuracy 0.001",
+    `set_accuracy ${s.game === "full" ? 0.05 / s.pot : 0.001}`,
     `set_max_iteration ${Math.min(s.iterations, 10000)}`,
     "set_print_interval 100",
     "set_use_isomorphism 0",
     "start_solve",
-    "set_dump_rounds 1",
+    `set_dump_rounds ${s.game === "full" ? 3 : 1}`,
     "dump_result result.json",
     "",
   ].join("\n");
 }
 export function extract(data, s) {
+  if (s.game === "full")
+    return { full: true, raw: data, engine: "TexasSolver (patched console)" };
   if (s.sizing) return extractSized(data, s);
   const g = validate(s),
     bet = data.actions?.find((a) => /^BET /.test(a)),
@@ -177,10 +197,19 @@ export async function run(s, signal) {
         stdio: ["ignore", "pipe", "pipe"],
         signal,
       });
-      const timeout = setTimeout(() => {
-        child.kill();
-        reject(Error("Native solve exceeded five-minute limit"));
-      }, 300000);
+      const timeout = setTimeout(
+        () => {
+          child.kill();
+          reject(
+            Error(
+              s.game === "full"
+                ? "Native solve exceeded the 30-minute limit. Reduce ranges, sizes or iterations."
+                : "Native solve exceeded five-minute limit",
+            ),
+          );
+        },
+        s.game === "full" ? 1800000 : 300000,
+      );
       child.stdout.on("data", (b) => {
         output = (output + b.toString()).slice(-10000);
       });
@@ -198,6 +227,11 @@ export async function run(s, signal) {
           : reject(Error("Native solver failed with exit code " + code));
       });
     });
+    if (
+      (await stat(path.join(directory, "result.json"))).size >
+      256 * 1024 * 1024
+    )
+      throw Error("Native tree exceeds 256 MB. Reduce sizes or stacks.");
     const data = JSON.parse(
       await readFile(path.join(directory, "result.json"), "utf8"),
     );
