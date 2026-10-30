@@ -15,7 +15,7 @@ The setup script fetches https://github.com/bupticybee/TexasSolver, checks out c
 
 ## Scope and provenance
 
-The adapter currently exposes only the bounded flop game described in the main README, with exact weighted combinations, no rake, and suit isomorphism disabled. It fixes thread count to at most four, limits execution to five minutes, permits one native job at a time, and uses an isolated temporary working directory. Subprocess arguments do not use a shell. Local solve requests require the exact loopback Origin. Imported data cannot specify executable paths or native commands.
+The adapter currently exposes only the bounded flop game described in the main README, with exact weighted combinations, no rake, and suit isomorphism disabled. It defaults to one thread for these small trees (override with TEXASSOLVER_THREADS, capped at four), limits execution to five minutes, permits one native job at a time, and uses an isolated temporary working directory. Subprocess arguments do not use a shell. Local solve requests require the exact loopback Origin. Imported data cannot specify executable paths or native commands.
 
 Upstream console source uses AGPL-3.0; see `TEXASSOLVER-LICENSE`. The main branch README also contains additional licensing statements: https://github.com/bupticybee/TexasSolver#license. This repository supplies a local build procedure, original adapter, and source patch, not upstream binaries. Review distribution/licensing decisions before bundling a modified engine or operating a hosted solver. No paid licensing agreement has been entered into.
 
@@ -42,3 +42,13 @@ The verifier measures the sum of both players' unilateral improvement incentives
 For zero rake, the native reported percent is half of this gap divided by pot, multiplied by 100. Compare units explicitly. The initial pre-patch result reported `0.00006914139%`, while independent gap was `0.007079991 bb`. After the chance normalization patch, native reported `0.004044175%` and independent gap was `0.000809673 bb` at the same 10 bb pot, which agree to floating-point tolerance. The included verifier requires gap below 0.001 bb for this fixture.
 
 The interactive adapter requests 0.001% native accuracy; maximum iterations may stop before that target. The independently measured gap is displayed regardless. Small fixed-tree gap does not establish optimal bet sizing or robustness of an opponent model.
+
+## Direct evaluator and measured efficiency
+
+The current patch replaces table-based seven-card evaluation with an original direct rank-count/suit-mask evaluator in HoldemEvaluator.h. It avoids loading the 2.6-million-entry dictionary at runtime and avoids evaluating 21 subsets for each seven-card hand. Standard Holdem only; short-deck is explicitly rejected. POKER_USE_TABLE_EVALUATOR=1 retains the old table path for diagnostic comparisons.
+
+Run `node native/verify-evaluator.mjs` after building. It exhaustively verifies all 2,598,960 dictionary hands, all 7,462 hand-value equivalence classes and their ordering, then compares 100,000 seeded seven-card hands against the best of their 21 verified five-card subsets. The numerical solver fixtures also remain unchanged.
+
+Windows measurement with identical one-thread input and precision (see docs/benchmarks/windows-memory.json): old evaluator 6.880 seconds and 124.5 MB sampled peak working set; direct evaluator 1.484 seconds and 9.9 MB sampled peak working set. Memory was sampled every 25 ms, not an exact allocation peak. These measurements are process-level on this machine, not a general hardware guarantee.
+
+The four complete fixture runs additionally show the effect of reducing thread scheduling overhead: the original four-thread table implementation took 11.4–17.4 seconds; direct evaluation with four threads took 6.1–12.4 seconds; direct evaluation with one thread took 0.72–1.42 seconds. Inputs, action trees and requested convergence targets are unchanged. Reports are preserved in docs/benchmarks. Larger trees may benefit from more threads and need separate profiling.

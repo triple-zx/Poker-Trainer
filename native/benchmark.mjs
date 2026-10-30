@@ -64,7 +64,11 @@ const report = {
   arch: os.arch(),
   cpu: os.cpus()[0].model,
   node: process.version,
-  threadLimit: 4,
+  threadLimit: Math.min(
+    4,
+    os.availableParallelism(),
+    Math.max(1, Number(process.env.TEXASSOLVER_THREADS) || 1),
+  ),
   upstream: "6dfb65b4d7ed081da509e8d8c3d82138c4708267",
   patch: "native/texassolver.patch",
   results,

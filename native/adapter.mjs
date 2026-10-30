@@ -44,7 +44,7 @@ export function commands(s) {
     "set_bet_sizes oop,flop,allin",
     "set_allin_threshold 1",
     "build_tree",
-    `set_thread_num ${Math.min(4, os.availableParallelism())}`,
+    `set_thread_num ${Math.min(4, os.availableParallelism(), Math.max(1, Number(process.env.TEXASSOLVER_THREADS) || 1))}`,
     "set_accuracy 0.001",
     `set_max_iteration ${Math.min(s.iterations, 10000)}`,
     "set_print_interval 100",

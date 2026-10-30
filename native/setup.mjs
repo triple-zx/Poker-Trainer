@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { mkdir, copyFile, access } from "node:fs/promises";
+import { mkdir, copyFile, access, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url)),
@@ -15,6 +16,11 @@ function command(executable, args, cwd = root) {
   if (r.status !== 0) throw Error(executable + " failed: " + r.status);
 }
 await mkdir(path.dirname(source), { recursive: true });
+const fingerprint = createHash("sha256");
+for (const name of ["texassolver.patch", "CompatMutex.h", "HoldemEvaluator.h"])
+  fingerprint.update(await readFile(path.join(root, "native", name)));
+const expected = fingerprint.digest("hex");
+const marker = path.join(source, ".trainer-patch");
 let exists = false;
 try {
   await access(path.join(source, ".git"));
@@ -38,10 +44,22 @@ if (!exists) {
     path.join(root, "native", "CompatMutex.h"),
     path.join(source, "include", "CompatMutex.h"),
   );
-} else
-  console.log(
-    "Reusing existing native source. Remove or rename .native manually to start over.",
+  await copyFile(
+    path.join(root, "native", "HoldemEvaluator.h"),
+    path.join(source, "include", "HoldemEvaluator.h"),
   );
+  await writeFile(marker, expected);
+} else {
+  let installed = "";
+  try {
+    installed = await readFile(marker, "utf8");
+  } catch {}
+  if (installed !== expected)
+    throw Error(
+      "Native source does not match this release. Rename .native and run setup again; existing files are preserved.",
+    );
+  console.log("Reusing the matching native source.");
+}
 command("cmake", [
   "-S",
   source,

@@ -1,0 +1,14 @@
+[
+  {
+    "Binary": "console_solver-before-evaluator.exe",
+    "WallMs": 6880.4568,
+    "SampledPeakWorkingSetBytes": 124530688,
+    "ExitCode": 0
+  },
+  {
+    "Binary": "console_solver.exe",
+    "WallMs": 1483.7958,
+    "SampledPeakWorkingSetBytes": 9924608,
+    "ExitCode": 0
+  }
+]
