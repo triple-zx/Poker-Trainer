@@ -24,7 +24,8 @@ export const resources =
 export async function available() {
   try {
     await access(binary);
-    await access(path.join(resources, "compairer/card5_dic_sorted.txt"));
+    if (process.env.POKER_USE_TABLE_EVALUATOR === "1")
+      await access(path.join(resources, "compairer/card5_dic_sorted.txt"));
     return true;
   } catch {
     return false;

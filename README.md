@@ -2,15 +2,23 @@
 
 A local postflop training and research app. English and Chinese interface. No account, cloud database, telemetry, or GPU required.
 
-## Run
+## Desktop application
 
-Install Node.js 22 or newer, then run from this folder:
+The product is an installable Windows/macOS desktop app with its own window, bundled runtime and local C++ engine. It does not require a browser tab or local web server. Desktop packages are produced by the Desktop packages workflow after startup checks; builds are currently unsigned.
 
-```sh
-node server.mjs
-```
+Developer setup (Node.js 22.12+ and native build prerequisites):
 
-Open http://127.0.0.1:4173. No package installation is needed. To check the code, run `node --test` (or `npm test`). CI runs on Windows, macOS, and Linux.
+~~~sh
+npm ci
+node node_modules/electron/install.js
+node native/setup.mjs
+npm run desktop:prepare
+npm start
+~~~
+
+Create installers with `npm run desktop:dist`. Windows outputs an installer and portable executable; macOS outputs a DMG and ZIP. The package includes the native engine's source archive, patch, build recipe and license. The direct evaluator does not need the large hand dictionary at runtime.
+
+The optional browser preview is a development tool: `npm run preview`. App data uses a stable private app origin in the desktop profile, separate from browser-preview storage. Export/import scenarios when moving between those profiles.
 
 ## Current milestone: bounded flop laboratory
 

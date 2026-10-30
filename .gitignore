@@ -5,3 +5,6 @@ release/
 native-result.json
 tmp_log.txt
 result.json
+
+.desktop-engine/
+.desktop-test-data/

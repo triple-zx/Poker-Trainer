@@ -1,14 +1,83 @@
 {
   "name": "poker-trainer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.mjs",
+    "start": "electron .",
     "test": "node --test",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "preview": "node server.mjs",
+    "desktop:smoke": "electron . --smoke-test",
+    "desktop:prepare": "node desktop/prepare-engine.mjs",
+    "desktop:pack": "electron-builder --dir",
+    "desktop:dist": "electron-builder --publish never"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
+  },
+  "productName": "Poker Trainer",
+  "description": "Local poker training and research with a native C++ solver",
+  "main": "desktop/main.mjs",
+  "author": "Poker Trainer",
+  "devDependencies": {
+    "electron": "45.1.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "local.pokertrainer.app",
+    "productName": "Poker Trainer",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "app/**/*",
+      "desktop/main.mjs",
+      "desktop/preload.cjs",
+      "desktop/protocol.mjs",
+      "native/adapter.mjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": ".desktop-engine",
+        "to": "native-engine",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "Poker-Trainer-${version}-${arch}-Setup.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.education",
+      "identity": null
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Education"
+    },
+    "artifactName": "Poker-Trainer-${version}-${os}-${arch}.${ext}",
+    "portable": {
+      "artifactName": "Poker-Trainer-${version}-${arch}-Portable.${ext}"
+    },
+    "electronDist": "node_modules/electron/dist"
   }
 }
