@@ -6,7 +6,7 @@
     <title>Poker Trainer · Postflop Lab</title>
     <link rel="stylesheet" href="style.css" />
   </head>
-  <body>
+  <body data-view="setup">
     <header>
       <a href="/" class="brand"
         >♠ <span>POKER<span class="muted"> / TRAINER</span></span></a
@@ -409,6 +409,12 @@
               YOU · OUT OF POSITION
             </p>
             <div id="hero-cards" class="cards"></div>
+            <ol
+              id="action-history"
+              class="action-history"
+              aria-label="Hand action history"
+              aria-live="polite"
+            ></ol>
           </div>
           <div class="decision">
             <p
@@ -457,12 +463,6 @@
             <button type="button" id="animation-speed" hidden>
               Animation: on
             </button>
-            <ol
-              id="action-history"
-              class="action-history"
-              aria-label="Hand action history"
-              aria-live="polite"
-            ></ol>
             <div id="feedback" aria-live="polite"></div>
           </div>
         </div>

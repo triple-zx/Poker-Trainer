@@ -155,6 +155,7 @@ function show(tab) {
     return;
   }
   document.querySelectorAll(".pane").forEach((p) => (p.hidden = p.id !== tab));
+  document.body.dataset.view = tab;
   document
     .querySelectorAll("[data-tab]")
     .forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
@@ -436,6 +437,7 @@ $("#deal").onclick = () => {
         fullTraining = null;
         save();
         history();
+        reportStatus();
       },
       onError(e) {
         hand = null;

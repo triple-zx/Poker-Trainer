@@ -10,7 +10,7 @@ body {
     sans-serif;
 }
 header {
-  height: 88px;
+  height: 64px;
   border-bottom: 1px solid #304039;
   display: flex;
   align-items: center;
@@ -218,6 +218,15 @@ footer {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 24px;
+  align-items: start;
+}
+body:not([data-view="setup"]) .intro,
+body:not([data-view="setup"]) .notice,
+body[data-view="train"] footer {
+  display: none;
+}
+body:not([data-view="setup"]) nav {
+  margin-top: 10px;
 }
 .table {
   min-height: 460px;
@@ -389,9 +398,12 @@ details[open] summary {
   margin-bottom: 12px;
 }
 .action-history {
-  max-height: 230px;
+  max-height: 170px;
   overflow: auto;
   padding-left: 24px;
+  text-align: left;
+  max-width: 350px;
+  margin: 20px auto 0;
 }
 .action-history li {
   padding: 8px 0;
