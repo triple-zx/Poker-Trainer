@@ -13,6 +13,7 @@ import {
   fullSizingReport,
 } from "./full-analysis-ui.js";
 import { fullCandidates } from "./full-sizing.js";
+import { modelBasis, editFullModel } from "./full-model.js";
 import {
   DEFAULT,
   cards,
@@ -42,6 +43,9 @@ let lang = "en",
   runId = 0;
 let fullTraining = null;
 let packageJob = null;
+let fullModel = null,
+  cachedBaseline = null;
+let explorerPath = "root";
 const t = (en, zh) => (lang === "en" ? en : zh);
 const msg = (en, zh = en) => ($("#status").textContent = t(en, zh));
 function read() {
@@ -59,6 +63,7 @@ function read() {
     s[k] = Number(s[k]);
   s.overrides = JSON.parse(s.overrides || "{}");
   if (s.game === "full") {
+    if (fullModel) s.fullModel = structuredClone(fullModel);
     s.engine = "native";
     if (s.fullSizingMode !== "off")
       s.fullSizing = {
@@ -107,6 +112,7 @@ function read() {
   return s;
 }
 function fill(s) {
+  fullModel = s.fullModel ? structuredClone(s.fullModel) : null;
   const iterations = form.elements.iterations;
   if (
     !Array.from(iterations.options).some(
@@ -149,6 +155,12 @@ function fill(s) {
 }
 function formatControls() {
   const full = form.elements.game.value === "full";
+  $("#model-edits").hidden = !full;
+  $("#model-edit-count").textContent = t(
+    `${Object.keys(fullModel?.locks || {}).length} opponent decisions edited`,
+    `已编辑 ${Object.keys(fullModel?.locks || {}).length} 个对手决策`,
+  );
+  $("#clear-model").disabled = !fullModel;
   $("#full-settings").hidden = !full;
   $("#bounded-settings").hidden = full;
   $("#engine").disabled = full;
@@ -220,6 +232,15 @@ $("#language").onclick = () => {
   save();
 };
 async function start(s, resume = false) {
+  if (
+    s.game === "full" &&
+    cachedBaseline &&
+    cachedBaseline.scenario.iterations === s.iterations &&
+    modelBasis(cachedBaseline.scenario) === modelBasis(s)
+  ) {
+    transferPackage("remodel", { result: cachedBaseline, scenario: s });
+    return;
+  }
   fullTraining?.cancel();
   fullTraining = null;
   const token = ++runId;
@@ -284,6 +305,7 @@ async function start(s, resume = false) {
     }
     if (data.type === "result") {
       result = data.result;
+      if (result.full) cachedBaseline = result;
       if (result.full)
         solutionStore("current", result).catch((e) =>
           msg("Solution could not be saved: " + e.message),
@@ -343,6 +365,7 @@ form.onsubmit = (e) => {
 $("#pause").onclick = () => {
   if (packageJob) {
     stop();
+    analysis();
     msg(
       "Package operation cancelled. The previous scenario is unchanged.",
       "已取消文件操作，原场景未更改。",
@@ -386,6 +409,10 @@ form.addEventListener("input", (e) => {
     "设置已更改，训练前请重新计算。",
   );
 });
+$("#clear-model").onclick = () => {
+  fullModel = null;
+  form.dispatchEvent(new Event("input", { bubbles: true }));
+};
 function download(obj, filename = "poker-scenario.json") {
   const url = URL.createObjectURL(
       obj instanceof Blob
@@ -417,6 +444,8 @@ $("#export").onclick = () => {
   }
 };
 function transferPackage(type, payload) {
+  if (packageJob)
+    throw Error("Wait for the current operation or cancel it first");
   if (hand)
     throw Error("Finish the hand before importing or exporting a solution");
   stop();
@@ -440,12 +469,14 @@ function transferPackage(type, payload) {
   worker.onerror = (e) => {
     if (token !== runId) return;
     stop();
+    analysis();
     msg(e.message || "Package operation failed");
   };
   worker.onmessage = async ({ data }) => {
     if (token !== runId) return;
     stop();
     if (data.type === "error") {
+      analysis();
       msg(data.message);
       return;
     }
@@ -463,6 +494,8 @@ function transferPackage(type, payload) {
     checkpoint = [];
     jobScenario = data.scenario;
     result = data.result;
+    if (result?.full) cachedBaseline = result;
+    if (type !== "remodel") explorerPath = "root";
     fill(jobScenario);
     $("#check").disabled = $("#shove").disabled = true;
     $("#resume").disabled = !!result;
@@ -704,14 +737,27 @@ function analysis() {
     g = validate(s);
   if (result.full) {
     el.innerHTML =
-      `<div class="report"><h2>${esc(s.name)}</h2><p>Flop → turn → river · ${result.nodes.toLocaleString()} verified nodes · ${result.coverage.toLocaleString()} compatible ordered runouts</p><p class="metric">${result.gap.toFixed(5)} bb</p><p>Independently measured baseline Nash gap within the configured tree. Every offered action has an evaluated continuation. EV loss uses the best continuation against the fixed opponent model. Untested sizes and trees with more raises remain outside this comparison.</p><p>Opponent adjustments change call frequency while preserving the relative weights of other actions. The deviation slider blends the baseline with the best response; it is not a robustness guarantee.</p><table><thead><tr><th>Hero</th><th>Root action EVs</th></tr></thead><tbody>${g.hero.map((h, i) => `<tr><td>${h.label}</td><td>${result.root.ev[i]?.map((v, a) => `${esc(result.root.actions[a].kind)}${result.root.actions[a].amount ? " " + result.root.actions[a].amount + " bb" : ""}: ${v.toFixed(4)}`).join(" · ") || "No compatible deals"}</td></tr>`).join("")}</tbody></table></div>` +
+      `<div class="report"><h2>${esc(s.name)}</h2><p>Flop → turn → river · ${result.nodes.toLocaleString()} verified nodes · ${result.coverage.toLocaleString()} compatible ordered runouts</p><p class="metric">${result.gap.toFixed(5)} bb</p><p>Independently measured baseline Nash gap within the configured tree. Every offered action has an evaluated continuation. EV loss uses the best continuation against the fixed opponent model. Untested sizes and trees with more raises remain outside this comparison.</p><p>Calling tendency preserves the relative weights of non-call actions. Detailed opponent edits replace the complete action distribution for one combination at one decision. The deviation slider blends the baseline with the best response; it is not a robustness guarantee.</p><table><thead><tr><th>Hero</th><th>Root action EVs</th></tr></thead><tbody>${g.hero.map((h, i) => `<tr><td>${h.label}</td><td>${result.root.ev[i]?.map((v, a) => `${esc(result.root.actions[a].kind)}${result.root.actions[a].amount ? " " + result.root.actions[a].amount + " bb" : ""}: ${v.toFixed(4)}`).join(" · ") || "No compatible deals"}</td></tr>`).join("")}</tbody></table></div>` +
       equityReport(g, result.eq, t, esc);
     el.insertAdjacentHTML(
       "beforeend",
       `<details class="report"><summary>${t("Range matrices", "范围矩阵")}</summary><h3>${t("You", "玩家")}</h3>${matrix(g.hero)}<h3>${t("Opponent", "对手")}</h3>${matrix(g.villain)}</details>`,
     );
     fullSizingReport(el, result, t);
-    fullExplorer(el, result);
+    fullExplorer(
+      el,
+      result,
+      (path, combo, policy) => {
+        if (packageJob) throw Error("Wait for the current update to finish");
+        const scenario = editFullModel(result.scenario, path, combo, policy);
+        transferPackage("remodel", { result, scenario });
+      },
+      t,
+      explorerPath,
+      (path) => {
+        explorerPath = path;
+      },
+    );
     return;
   }
   if (result.sized) {
@@ -835,6 +881,7 @@ if (jobScenario?.game === "full") {
       )
         return;
       result = saved;
+      cachedBaseline = saved;
       $("#resume").disabled = true;
       refreshTarget();
       analysis();
@@ -942,6 +989,7 @@ $("#load-scenario").onclick = async () => {
           ? solveScenario(jobScenario, checkpoint, saved.nativeProfile)
           : null;
     if (result && !sameScenario(result.scenario, jobScenario)) result = null;
+    if (result?.full) cachedBaseline = result;
     fill(jobScenario);
     $("#deal").disabled = false;
     $("#check").disabled = $("#shove").disabled = true;

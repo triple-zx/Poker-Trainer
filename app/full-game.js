@@ -1,4 +1,5 @@
 import { validate, cards, cardName, rank7 } from "./engine.js";
+import { validateFullModel, modelLocks } from "./full-model.js";
 import {
   validateFullSizing,
   fullCandidates,
@@ -49,6 +50,7 @@ export function validateFull(s) {
         );
     }
   }
+  validateFullModel(s);
   return g;
 }
 export function initialState(s) {
@@ -344,12 +346,14 @@ export function evaluateFull(tree, s, { store = true } = {}) {
     ranges = [g.hero, g.villain],
     cache = new Map();
   const modeled = new WeakSet();
+  const locks = modelLocks(tree.root, s);
   const index = (p, player) => (player ? p.j : p.i);
   const policies = (node, model) => {
     if (!model || node.player !== 1) return node.policy;
     if (modeled.has(node)) return node.model;
     node.model = node.policy.map((v, i) => {
       if (!v) return null;
+      if (locks.get(node)?.has(i)) return locks.get(node).get(i);
       const call = node.actions.findIndex((a) => a.kind === "CALL");
       if (call < 0) return v;
       const target =

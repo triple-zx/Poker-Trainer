@@ -2,6 +2,7 @@ import {
   PACKAGE_LIMIT,
   solutionPackage,
   restorePackage,
+  remodelSolution,
 } from "./solution-package.js";
 self.onmessage = async ({ data }) => {
   try {
@@ -14,6 +15,11 @@ self.onmessage = async ({ data }) => {
           "Solution package exceeds 128 MiB; reduce the tree before sharing",
         );
       self.postMessage({ type: "exported", blob });
+    } else if (data.type === "remodel") {
+      self.postMessage({
+        type: "imported",
+        ...remodelSolution(data.result, data.scenario),
+      });
     } else if (data.type === "import") {
       if (!data.file || data.file.size > PACKAGE_LIMIT)
         throw Error("Package exceeds 128 MiB");

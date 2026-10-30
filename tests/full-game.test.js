@@ -12,6 +12,7 @@ import {
 } from "../app/full-game.js";
 import { commands } from "../native/adapter.mjs";
 import { FullSession } from "../app/full-session.js";
+import { editFullModel, modelLocks } from "../app/full-model.js";
 const s = {
   ...DEFAULT,
   game: "full",
@@ -91,6 +92,19 @@ test("best response aggregates hidden hands before choosing an action", () => {
   const r = evaluateFull({ root, nodes: 5 }, scenario);
   assert.deepEqual(root.ev[0], [5, 5]);
   assert.equal(r.modelEV, 5); // Clairvoyant per-pair maximization would incorrectly give 12.5.
+  const edited = editFullModel(scenario, "root/a:BET:15", "QcQd", {
+    CALL: 0,
+    FOLD: 1,
+  });
+  const updated = evaluateFull({ root, nodes: 5 }, edited);
+  assert.equal(updated.gap, r.gap);
+  assert.deepEqual(root.children[1].model, [
+    [0, 1],
+    [1, 0],
+  ]);
+  assert.deepEqual(root.ev[0], [5, -2.5]);
+  root.children[1].policy[0] = null;
+  assert.throws(() => modelLocks(root, edited), /unavailable/);
 });
 test("training pauses for each later-street decision and reveals no unused cards on a fold", () => {
   const make = (state, runout) => {
