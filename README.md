@@ -2,7 +2,7 @@
 
 A local postflop training and research app. English and Chinese interface. No account, cloud database, telemetry, or GPU required.
 
-Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions and automatic full-hand sizing for the next release; use the developer setup below to run those changes now.
+Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions, automatic full-hand sizing, detailed opponent edits, in-position play and conditional range analysis for the next release; use the developer setup below to run those changes now.
 
 ## Desktop application
 
@@ -33,6 +33,8 @@ Use **Export solved scenario** after precomputation to share a complete full-han
 In **Analysis → Explore the saved tree**, navigate to an opponent decision, select a private combination, and enter percentages for every action. Detailed edits support flop, turn and river bets and raises. They replace the full distribution only at that exact board/history/combination; unspecified decisions retain the calling-tendency model. Apply recalculates all feedback and sizing menus from the saved baseline without another C++ solve. Reset one combination there, or clear all node edits in Configure. Edits are included in scenario and solution exports. Up to 64 decisions and 50 KB of edits are supported; changing the tree requires explicitly clearing incompatible edits. Precompute also reuses the current baseline for model, deviation or menu-limit changes when tree settings and iteration budget match.
 
 Choose **Your postflop position** in Configure: out of position acts first on every street; in position follows the opponent. The choice applies to ranges, native solving, analysis, training and saved packages. Changing position requires a new baseline and clearing any incompatible detailed opponent edits. Legacy bounded drills remain out of position.
+
+At any saved-tree node, expand **Ranges at this decision** to inspect both conditional ranges, exact-combination and range equity, made hands, draws, action frequencies, card removal and weighted 13×13 matrices. Compare the baseline for both players with your adjusted strategy against the fixed opponent. Weights follow both players' earlier actions and the exact board; a zero-probability history has no conditional range. Public-card conflicts remain visible with zero weight. Equity averages legal runouts before future betting and is distinct from decision EV. **History to this decision** lists the preceding actions and cards. These reports reuse the saved solution without running the native solver.
 
 Current full-hand limits: four exact combinations per player, zero rake, pot at least 4 bb, effective stack from 1 bb to three times the pot, at most three raises after the initial bet on a street. Native precomputation uses up to four CPU threads and a 30-minute timeout; tree exports are capped at 256 MB and validated trees at 600,000 nodes. These are capacity guards, not a measured 8 GB hardware guarantee. The displayed independent gap can remain above target after the iteration budget; coverage completion does not imply convergence. No claim is made about untested sizes.
 

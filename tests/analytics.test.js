@@ -17,6 +17,8 @@ test("made hands and draw patterns distinguish current straights, wheel draws an
   assert.equal(f("Ah2h", "3c 4d 5s").straightOuts, 0);
   assert.equal(f("Ah2h", "3c 4d 5s").category, 4);
   assert.equal(f("AhAd", "Ac Kd Kh").category, 6);
+  assert.equal(f("AhKh", "Qh 2h 7c 3d 9s").flushDraw, false);
+  assert.equal(f("9h8h", "Th 7c 2d 3s 4c").straightOuts, 0);
 });
 test("range summaries use collision-adjusted joint mass and complementary equity", () => {
   const g = validate({

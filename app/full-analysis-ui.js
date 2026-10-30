@@ -3,6 +3,7 @@ import { cardName, validate } from "./engine.js";
 import { fullCandidates } from "./full-sizing.js";
 import { actionKey, childPath } from "./full-model.js";
 import { playerPosition } from "./positions.js";
+import { nodeRangePanel } from "./full-node-analysis-ui.js";
 
 export function fullSizingReport(container, result, t = (en) => en) {
   const chosen = result.selection;
@@ -68,6 +69,9 @@ export function fullExplorer(
   const g = validate(result.scenario),
     trail = [result.root],
     paths = ["root"];
+  let rangeProfile = "model",
+    rangesOpen = false;
+  const equityCache = new Map();
   for (const step of selectedPath.split("/").slice(1)) {
     const node = trail.at(-1);
     const choices =
@@ -92,7 +96,41 @@ export function fullExplorer(
     const context = document.createElement("p");
     context.textContent = `${streetName(node.board)} · ${node.board.map(cardName).join(" ")} · pot ${(result.scenario.pot + node.spent[0] + node.spent[1]).toFixed(3)} bb`;
     section.append(title, context);
+    const ranges = () =>
+      nodeRangePanel(section, result, paths.at(-1), {
+        t,
+        profile: rangeProfile,
+        open: rangesOpen,
+        cache: equityCache,
+        onOpen: (open) => {
+          rangesOpen = open;
+        },
+        onProfile: (profile) => {
+          rangeProfile = profile;
+        },
+      });
     if (trail.length > 1) {
+      const history = document.createElement("details"),
+        summary = document.createElement("summary"),
+        list = document.createElement("ol");
+      summary.textContent = t("History to this decision", "到此决策的行动历史");
+      trail.slice(0, -1).forEach((parent, i) => {
+        const li = document.createElement("li"),
+          child = trail[i + 1];
+        li.textContent =
+          parent.type === "chance"
+            ? cardName(child.board.at(-1))
+            : (parent.player === 0 ? t("You", "玩家") : t("Opponent", "对手")) +
+              " · " +
+              fullActionLabel(
+                parent.actions[parent.children.indexOf(child)],
+                parent,
+                result.scenario,
+              );
+        list.append(li);
+      });
+      history.append(summary, list);
+      section.append(history);
       const back = document.createElement("button");
       back.textContent = "← Previous node";
       back.onclick = () => {
@@ -107,6 +145,7 @@ export function fullExplorer(
       p.textContent =
         node.winner < 0 ? "Showdown or all-in runout" : "Hand ends by a fold";
       section.append(p);
+      ranges();
       return;
     }
     const controls = document.createElement("div");
@@ -131,6 +170,7 @@ export function fullExplorer(
       };
       label.append(select);
       controls.append(label, go);
+      ranges();
       return;
     }
     const actor = document.createElement("p");
@@ -313,6 +353,7 @@ export function fullExplorer(
       populate();
       section.append(editor);
     }
+    ranges();
   }
   container.append(section);
   render();

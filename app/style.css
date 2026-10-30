@@ -449,3 +449,15 @@ details[open] summary {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
 }
+.node-ranges {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid #34473a;
+  border-radius: 10px;
+}
+.node-ranges > label {
+  margin-top: 16px;
+}
+.node-matrix .cell {
+  white-space: pre-line;
+}
