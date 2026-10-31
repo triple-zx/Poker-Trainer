@@ -1,16 +1,41 @@
 import { FullSession } from "./full-session.js";
 import { fullActionLabel, streetName } from "./full-game.js";
 import { cardName } from "./engine.js";
+import {
+  trainingStreet,
+  trainingAction,
+  trainingEvent,
+} from "./training-text.js";
 
 export function startFullTraining(
   result,
   sampling,
-  { cardHTML, onFinish, onError, practiceTarget = "", drill = null },
+  {
+    cardHTML,
+    onFinish,
+    onError,
+    practiceTarget = "",
+    drill = null,
+    t = (en) => en,
+    samplingDescription = null,
+  },
 ) {
   const session = new FullSession(result, sampling, Math.random, drill),
     $ = (s) => document.querySelector(s);
   const log = $("#action-history"),
     actions = $("#sized-actions");
+  const captions = new Map();
+  function caption(element, text) {
+    captions.set(element, text);
+    element.textContent = text();
+  }
+  function refresh() {
+    if (cancelled) return;
+    for (const [element, text] of captions) {
+      if (element.isConnected) element.textContent = text();
+      else captions.delete(element);
+    }
+  }
   let cancelled = false,
     busy = false,
     lastBoard = "",
@@ -22,12 +47,17 @@ export function startFullTraining(
   $("#check").hidden = $("#shove").hidden = true;
   $("#deal").disabled = true;
   $("#target").disabled = !!drill;
+  if (samplingDescription) caption($("#sampling-note"), samplingDescription);
   const speed = $("#animation-speed");
   speed.hidden = false;
-  speed.textContent = fast ? "Animation: instant" : "Animation: on";
+  caption(speed, () =>
+    fast
+      ? t("Animation: instant", "动画：即时")
+      : t("Animation: on", "动画：开启"),
+  );
   speed.onclick = () => {
     fast = !fast;
-    speed.textContent = fast ? "Animation: instant" : "Animation: on";
+    refresh();
   };
   function draw(event) {
     if (cancelled) return;
@@ -36,10 +66,13 @@ export function startFullTraining(
       $("#board").innerHTML = cardHTML(event.board);
       lastBoard = boardKey;
     }
-    $("#pot-display").textContent =
-      `${streetName(event.board)} · Pot ${event.pot.toFixed(3).replace(/\.?0+$/, "")} bb · You ${(result.scenario.stack - event.spent[0]).toFixed(2)} bb · Opponent ${(result.scenario.stack - event.spent[1]).toFixed(2)} bb`;
+    caption(
+      $("#pot-display"),
+      () =>
+        `${trainingStreet(streetName(event.board), t)} · ${t("Pot", "底池")} ${event.pot.toFixed(3).replace(/\.?0+$/, "")} ${t("bb", "大盲")} · ${t("You", "你")} ${(result.scenario.stack - event.spent[0]).toFixed(2)} ${t("bb", "大盲")} · ${t("Opponent", "对手")} ${(result.scenario.stack - event.spent[1]).toFixed(2)} ${t("bb", "大盲")}`,
+    );
     const li = document.createElement("li");
-    li.textContent = event.text;
+    caption(li, () => trainingEvent(event.text, t));
     log.append(li);
     log.scrollTop = log.scrollHeight;
   }
@@ -66,20 +99,36 @@ export function startFullTraining(
           const loss = session.decisions.reduce((sum, d) => sum + d.loss, 0);
           const feedback = $("#feedback");
           const title = document.createElement("p");
-          title.textContent = `${drill ? "Decision drill complete · no continuation played" : session.events.at(-1).text} · ${session.decisions.length} ${session.decisions.length === 1 ? "decision" : "decisions"} · Total EV loss ${loss.toFixed(4)} bb`;
+          caption(
+            title,
+            () =>
+              `${drill ? t("Decision drill complete · no continuation played", "单次决策训练完成 · 未继续后续行动") : trainingEvent(session.events.at(-1).text, t)} · ${session.decisions.length} ${t(session.decisions.length === 1 ? "decision" : "decisions", "次决策")} · ${t("Total EV loss", "总 EV 损失")} ${loss.toFixed(4)} ${t("bb", "大盲")}`,
+          );
           feedback.append(title);
           for (const d of session.decisions) {
             const details = document.createElement("details"),
               summary = document.createElement("summary");
-            summary.textContent = `${d.street} · ${d.label} · loss ${d.loss.toFixed(4)} bb`;
+            caption(
+              summary,
+              () =>
+                `${trainingStreet(d.street, t)} · ${trainingAction(d.label, t)} · ${t("loss", "损失")} ${d.loss.toFixed(4)} ${t("bb", "大盲")}`,
+            );
             details.append(summary);
             d.choices.forEach((label, i) => {
               const p = document.createElement("p");
-              p.textContent = `${label}: EV ${d.ev[i].toFixed(4)} bb · target ${(100 * d.target[i]).toFixed(1)}%`;
-              if (d.retained)
-                p.textContent += d.retained.includes(i)
-                  ? " · retained menu"
-                  : " · alternative evaluated choice";
+              caption(
+                p,
+                () =>
+                  `${trainingAction(label, t)}: EV ${d.ev[i].toFixed(4)} ${t("bb", "大盲")} · ${t("target", "目标频率")} ${(100 * d.target[i]).toFixed(1)}%` +
+                  (d.retained
+                    ? d.retained.includes(i)
+                      ? t(" · retained menu", " · 保留尺度")
+                      : t(
+                          " · alternative evaluated choice",
+                          " · 已计算的备选行动",
+                        )
+                    : ""),
+              );
               details.append(p);
             });
             feedback.append(details);
@@ -110,10 +159,8 @@ export function startFullTraining(
       if (!cancelled && !session.finished)
         session.node.actions.forEach((a, i) => {
           const button = document.createElement("button");
-          button.textContent = fullActionLabel(
-            a,
-            session.node,
-            result.scenario,
+          caption(button, () =>
+            fullActionLabel(a, session.node, result.scenario, t),
           );
           button.onclick = () => {
             if (!busy) pump([session.choose(i)]);
@@ -132,40 +179,50 @@ export function startFullTraining(
   return {
     cancel() {
       cancelled = true;
+      captions.clear();
       $("#target").disabled = false;
       actions.replaceChildren();
       speed.hidden = true;
+      speed.onclick = null;
     },
+    refresh,
     session,
   };
 }
 
-export function fullReplay(container, record, cardHTML, parseCards) {
+export function fullReplay(
+  container,
+  record,
+  cardHTML,
+  t = (en) => en,
+  state = { index: 0 },
+) {
   const box = document.createElement("section"),
     display = document.createElement("div"),
     text = document.createElement("p"),
     next = document.createElement("button");
-  let index = 0;
   function render() {
-    const event = record.events[index];
+    const event = record.events[state.index];
     display.innerHTML = cardHTML(event.board);
-    text.textContent = `${index + 1}/${record.events.length} · ${event.text} · pot ${event.pot} bb`;
+    text.textContent = `${state.index + 1}/${record.events.length} · ${trainingEvent(event.text, t)} · ${t("pot", "底池")} ${event.pot} ${t("bb", "大盲")}`;
     next.textContent =
-      index === record.events.length - 1 ? "Replay again" : "Next action →";
+      state.index === record.events.length - 1
+        ? t("Replay again", "再次回放")
+        : t("Next action →", "下一步 →");
   }
   next.onclick = () => {
-    index = (index + 1) % record.events.length;
+    state.index = (state.index + 1) % record.events.length;
     render();
   };
   box.append(display, text, next);
   for (const d of record.decisions) {
     const p = document.createElement("p");
     p.textContent =
-      `${d.street}: ${d.label} · loss ${d.loss.toFixed(4)} bb · ` +
+      `${trainingStreet(d.street, t)}: ${trainingAction(d.label, t)} · ${t("loss", "损失")} ${d.loss.toFixed(4)} ${t("bb", "大盲")} · ` +
       d.choices
         .map(
           (c, i) =>
-            `${c}: ${d.ev[i].toFixed(3)} bb${d.retained ? (d.retained.includes(i) ? " (retained)" : " (alternative)") : ""}`,
+            `${trainingAction(c, t)}: ${d.ev[i].toFixed(3)} ${t("bb", "大盲")}${d.retained ? (d.retained.includes(i) ? t(" (retained)", "（保留）") : t(" (alternative)", "（备选）")) : ""}`,
         )
         .join(" / ");
     box.append(p);

@@ -2,6 +2,8 @@
 
 A local postflop training and research app. English and Chinese interface. No account, cloud database, telemetry, or GPU required.
 
+Switch languages during full-hand practice or a decision drill without restarting the hand. Action history, betting controls, feedback, journal replay and frequency summaries follow the selected language; replay keeps its current step. Saved decisions and scores retain the same canonical data in either language.
+
 Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions, automatic full-hand sizing, opponent tendencies and detailed edits, in-position play, conditional range analysis, saved-flop comparisons, range editing and resumable native solving for the next release; use the developer setup below to run those changes now.
 
 ## Desktop application

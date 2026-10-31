@@ -64,6 +64,13 @@ let lang = "en",
   controller = null,
   runId = 0;
 let fullTraining = null;
+let trainingView = null;
+const replayStates = new WeakMap();
+function disposeTraining() {
+  trainingView?.cancel();
+  trainingView = null;
+  fullTraining = null;
+}
 let packageJob = null;
 let fullModel = null,
   cachedBaseline = null;
@@ -322,6 +329,7 @@ function translate() {
   analysis();
   history();
   updateCandidatePreview();
+  trainingView?.refresh();
 }
 $("#language").onclick = () => {
   lang = lang === "en" ? "zh" : "en";
@@ -344,8 +352,7 @@ async function start(s, resume = false) {
     transferPackage("remodel", { result: cachedBaseline, scenario: s });
     return;
   }
-  fullTraining?.cancel();
-  fullTraining = null;
+  disposeTraining();
   const token = ++runId;
   controller?.abort();
   controller = null;
@@ -558,8 +565,7 @@ $("#restore-native-job").onclick = async () => {
     validate(saved.scenario);
     if (saved.scenario.game === "full") validateFull(saved.scenario);
     stop();
-    fullTraining?.cancel();
-    fullTraining = null;
+    disposeTraining();
     result = null;
     cachedBaseline = null;
     jobScenario = saved.scenario;
@@ -586,8 +592,7 @@ form.addEventListener("input", (e) => {
     }
   }
   formatControls();
-  fullTraining?.cancel();
-  fullTraining = null;
+  disposeTraining();
   worker?.terminate();
   worker = null;
   result = null;
@@ -683,8 +688,7 @@ function transferPackage(type, payload) {
       );
       return;
     }
-    fullTraining?.cancel();
-    fullTraining = null;
+    disposeTraining();
     hand = null;
     checkpoint = [];
     jobScenario = data.scenario;
@@ -752,9 +756,25 @@ function beginFullTraining(sampling, target = "", drill = null) {
     const sourceResult = result;
     if (drill) drillContext(result, drill);
     reportStatus();
-    fullTraining?.cancel();
+    disposeTraining();
     fullTraining = startFullTraining(result, sampling, {
       cardHTML,
+      t,
+      samplingDescription: () =>
+        drill
+          ? t(
+              `Decision drill · conditional ${drill.profile === "baseline" ? "baseline" : "adjusted hero + fixed opponent"} range. Earlier actions are context only; feedback follows your one choice. The full-hand sampling selector does not apply.`,
+              `单次决策训练 · 按${drill.profile === "baseline" ? "基线" : "玩家调整策略 + 固定对手"}条件范围采样。此前行动仅作背景，只评分本次选择。完整手牌采样选择器不适用。`,
+            )
+          : target
+            ? t(
+                "Targeted practice · all applicable streets. This changes the configured sampling distribution.",
+                "定向训练 · 所有适用街道。已改变原配置的采样分布。",
+              )
+            : t(
+                "Full range · all applicable streets",
+                "完整范围 · 所有适用街道",
+              ),
       practiceTarget: target,
       drill,
       onFinish(record) {
@@ -767,6 +787,8 @@ function beginFullTraining(sampling, target = "", drill = null) {
         reportStatus();
         if (drill) {
           const repeat = document.createElement("button");
+          repeat.dataset.en = "Repeat this decision";
+          repeat.dataset.zh = "再次练习此决策";
           repeat.textContent = t("Repeat this decision", "再次练习此决策");
           repeat.onclick = () => {
             if (result !== sourceResult) {
@@ -788,18 +810,8 @@ function beginFullTraining(sampling, target = "", drill = null) {
         msg(e.message);
       },
     });
+    trainingView = fullTraining;
     hand = {};
-    $("#sampling-note").textContent = drill
-      ? t(
-          `Decision drill · conditional ${drill.profile === "baseline" ? "baseline" : "adjusted hero + fixed opponent"} range. Earlier actions are context only; feedback follows your one choice. The full-hand sampling selector does not apply.`,
-          `单次决策训练 · 按${drill.profile === "baseline" ? "基线" : "玩家调整策略 + 固定对手"}条件范围采样。此前行动仅作背景，只评分本次选择。完整手牌采样选择器不适用。`,
-        )
-      : target
-        ? t(
-            "Targeted practice · all applicable streets",
-            "定向训练 · 所有适用街道",
-          )
-        : t("Full range · all applicable streets", "完整范围 · 所有适用街道");
     show("train");
   } catch (e) {
     hand = null;
@@ -836,6 +848,7 @@ $("#deal").onclick = () => {
     beginFullTraining(sampling, target);
     return;
   }
+  disposeTraining();
   hand = {
     ...sample(sampling),
     targeted: target !== "",
@@ -1030,7 +1043,7 @@ function history() {
     t,
     esc,
   );
-  fullFrequencyReport(el, records);
+  fullFrequencyReport(el, records, t);
   records.forEach((r, i) => {
     if (filter && r.loss < 0.01 && !r.bookmark) return;
     const div = document.createElement("div");
@@ -1047,15 +1060,17 @@ function history() {
     };
     const replay = document.createElement("button");
     replay.textContent = t("Replay details", "复盘详情");
-    replay.onclick = () => {
-      (r.full ? fullReplay : replayHand)(
-        div,
-        r,
-        ...(r.full ? [cardHTML, cards] : [t, cardHTML, cards]),
-      );
+    const renderReplay = () => {
+      if (r.full) fullReplay(div, r, cardHTML, t, replayStates.get(r));
+      else replayHand(div, r, t, cardHTML, cards);
       replay.disabled = true;
     };
+    replay.onclick = () => {
+      if (r.full) replayStates.set(r, { index: 0 });
+      renderReplay();
+    };
     div.append(button, replay, text);
+    if (r.full && replayStates.has(r)) renderReplay();
     el.append(div);
   });
   if (!el.childNodes.length)

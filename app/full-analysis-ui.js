@@ -5,6 +5,7 @@ import { actionKey, childPath } from "./full-model.js";
 import { playerPosition } from "./positions.js";
 import { nodeRangePanel } from "./full-node-analysis-ui.js";
 import { nextCardPanel } from "./full-card-analysis-ui.js";
+import { trainingStreet, trainingAction } from "./training-text.js";
 
 export function fullSizingReport(container, result, t = (en) => en) {
   const chosen = result.selection;
@@ -97,7 +98,7 @@ export function fullExplorer(
     const title = document.createElement("h3");
     title.textContent = t("Explore the saved tree", "浏览已保存的策略树");
     const context = document.createElement("p");
-    context.textContent = `${streetName(node.board)} · ${node.board.map(cardName).join(" ")} · pot ${(result.scenario.pot + node.spent[0] + node.spent[1]).toFixed(3)} bb`;
+    context.textContent = `${trainingStreet(streetName(node.board), t)} · ${node.board.map(cardName).join(" ")} · ${t("pot", "底池")} ${(result.scenario.pot + node.spent[0] + node.spent[1]).toFixed(3)} ${t("bb", "大盲")}`;
     section.append(title, context);
     const ranges = () =>
       nodeRangePanel(section, result, paths.at(-1), {
@@ -130,6 +131,7 @@ export function fullExplorer(
                 parent.actions[parent.children.indexOf(child)],
                 parent,
                 result.scenario,
+                t,
               );
         list.append(li);
       });
@@ -147,7 +149,9 @@ export function fullExplorer(
     if (node.type === "terminal") {
       const p = document.createElement("p");
       p.textContent =
-        node.winner < 0 ? "Showdown or all-in runout" : "Hand ends by a fold";
+        node.winner < 0
+          ? t("Showdown or all-in runout", "摊牌或全下发牌")
+          : t("Hand ends by a fold", "弃牌结束本手");
       section.append(p);
       ranges();
       return;
@@ -216,15 +220,17 @@ export function fullExplorer(
     if (node.player === 0 && node.activeActions) {
       const menu = document.createElement("p");
       menu.textContent =
-        "Retained menu: " +
+        t("Retained menu: ", "保留尺度：") +
         node.activeActions
-          .map((i) => fullActionLabel(node.actions[i], node, result.scenario))
+          .map((i) =>
+            fullActionLabel(node.actions[i], node, result.scenario, t),
+          )
           .join(" · ");
       section.append(menu);
     }
     node.actions.forEach((a, i) => {
       const button = document.createElement("button");
-      button.textContent = fullActionLabel(a, node, result.scenario);
+      button.textContent = fullActionLabel(a, node, result.scenario, t);
       button.onclick = () => {
         paths.push(childPath(paths.at(-1), node, i));
         trail.push(node.children[i]);
@@ -235,12 +241,16 @@ export function fullExplorer(
     const table = document.createElement("table"),
       head = document.createElement("tr");
     for (const name of [
-      "Combination",
-      "Action",
-      "Baseline",
-      node.player === 0 ? "Adjusted" : "Opponent model",
-      ...(node.player === 0 ? ["EV (bb)"] : []),
-      ...(node.sizingEV ? ["EV with retained future menus (bb)"] : []),
+      t("Combination", "组合"),
+      t("Action", "行动"),
+      t("Baseline", "基线"),
+      node.player === 0
+        ? t("Adjusted", "调整后")
+        : t("Opponent model", "对手模型"),
+      ...(node.player === 0 ? [t("EV (bb)", "EV（大盲）")] : []),
+      ...(node.sizingEV
+        ? [t("EV with retained future menus (bb)", "后续保留尺度的 EV（大盲）")]
+        : []),
     ]) {
       const th = document.createElement("th");
       th.textContent = name;
@@ -257,14 +267,19 @@ export function fullExplorer(
         const adjusted = (node.player === 0 ? node.adjusted : node.model)?.[i];
         for (const text of [
           h.label,
-          fullActionLabel(a, node, result.scenario),
+          fullActionLabel(a, node, result.scenario, t),
           (100 * node.policy[i][j]).toFixed(1) + "%",
-          adjusted ? (100 * adjusted[j]).toFixed(1) + "%" : "No model reach",
+          adjusted
+            ? (100 * adjusted[j]).toFixed(1) + "%"
+            : t("No model reach", "模型未到达"),
           ...(node.player === 0
-            ? [node.ev[i]?.[j]?.toFixed(4) ?? "No model reach"]
+            ? [node.ev[i]?.[j]?.toFixed(4) ?? t("No model reach", "模型未到达")]
             : []),
           ...(node.sizingEV
-            ? [node.sizingEV[i]?.[j]?.toFixed(4) ?? "No model reach"]
+            ? [
+                node.sizingEV[i]?.[j]?.toFixed(4) ??
+                  t("No model reach", "模型未到达"),
+              ]
             : []),
         ]) {
           const td = document.createElement("td");
@@ -322,7 +337,7 @@ export function fullExplorer(
           const label = document.createElement("label"),
             input = document.createElement("input");
           label.textContent =
-            fullActionLabel(a, node, result.scenario) + " (%)";
+            fullActionLabel(a, node, result.scenario, t) + " (%)";
           input.type = "number";
           input.min = "0";
           input.max = "100";
@@ -391,7 +406,7 @@ export function fullExplorer(
   render();
 }
 
-export function fullFrequencyReport(container, records) {
+export function fullFrequencyReport(container, records, t = (en) => en) {
   const groups = new Map();
   for (const r of records.filter((r) => r.full))
     for (const d of r.decisions) {
@@ -411,10 +426,13 @@ export function fullFrequencyReport(container, records) {
             " · " +
             r.hero +
             " · " +
-            d.street +
+            trainingStreet(d.street, t) +
             (r.drill
-              ? " · decision drill · " + r.drill.profile + " sampling"
-              : " · full hand"),
+              ? t(" · decision drill · ", " · 单次决策训练 · ") +
+                (r.drill.profile === "baseline"
+                  ? t("baseline sampling", "基线采样")
+                  : t("model sampling", "模型采样"))
+              : t(" · full hand", " · 完整手牌")),
           choices: d.choices,
           counts: d.choices.map(() => 0),
           target: d.choices.map(() => 0),
@@ -428,11 +446,16 @@ export function fullFrequencyReport(container, records) {
   if (!groups.size) return;
   const details = document.createElement("details"),
     summary = document.createElement("summary");
-  summary.textContent = "Full-hand and decision-drill frequencies";
+  summary.textContent = t(
+    "Full-hand and decision-drill frequencies",
+    "完整手牌与单次决策训练频率",
+  );
   details.append(summary);
   const note = document.createElement("p");
-  note.textContent =
-    "Counts are separated by scenario, private hand, board, prior actions and sampling target. A single mixed action is not a frequency mistake.";
+  note.textContent = t(
+    "Counts are separated by scenario, private hand, board, prior actions and sampling target. A single mixed action is not a frequency mistake.",
+    "按场景、底牌、公共牌、此前行动和采样目标分别统计。单次混合策略选择不视为频率错误。",
+  );
   details.append(note);
   for (const group of groups.values()) {
     const p = document.createElement("p");
@@ -440,11 +463,11 @@ export function fullFrequencyReport(container, records) {
       group.name +
       " · " +
       group.n +
-      " decisions · " +
+      t(" decisions · ", " 次决策 · ") +
       group.choices
         .map(
           (c, i) =>
-            `${c}: ${((100 * group.counts[i]) / group.n).toFixed(1)}% chosen / ${((100 * group.target[i]) / group.n).toFixed(1)}% target`,
+            `${trainingAction(c, t)}: ${((100 * group.counts[i]) / group.n).toFixed(1)}% ${t("chosen", "实际选择")} / ${((100 * group.target[i]) / group.n).toFixed(1)}% ${t("target", "目标频率")}`,
         )
         .join(" · ");
     details.append(p);
