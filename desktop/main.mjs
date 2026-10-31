@@ -198,6 +198,7 @@ else {
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: true,
+            backgroundThrottling: !smoke,
           },
         });
         const contents = window.webContents,
@@ -268,6 +269,13 @@ else {
             const { checkpointSmoke } = await import("./checkpoint-smoke.mjs");
             checkpointUI = await checkpointSmoke(contents, root);
           }
+          let expandedRangeUI = null;
+          if (process.argv.includes("--expanded-range-smoke")) {
+            const { expandedRangeSmoke } = await import(
+              "./expanded-range-smoke.mjs"
+            );
+            expandedRangeUI = await expandedRangeSmoke(contents, root);
+          }
           console.log(
             JSON.stringify({
               desktopLoaded: ready,
@@ -276,6 +284,7 @@ else {
               packageWorker,
               flopReportWorker,
               ...(checkpointUI ? { checkpointUI } : {}),
+              ...(expandedRangeUI ? { expandedRangeUI } : {}),
               url: contents.getURL(),
             }),
           );

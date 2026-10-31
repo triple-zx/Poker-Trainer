@@ -2,6 +2,8 @@ import { validate, cards, cardName, rank7 } from "./engine.js";
 import { validateFullModel, modelLocks } from "./full-model.js";
 import { firstPlayer } from "./positions.js";
 import { validateTendencies, opponentPolicy } from "./opponent-tendencies.js";
+import { fullCardContext } from "./full-cards.js";
+import { FULL_POLICY_VALUE_LIMIT } from "./limits.js";
 import {
   validateFullSizing,
   fullCandidates,
@@ -20,10 +22,6 @@ export function validateFull(s) {
   if (s.pot < 4 || s.stack < 1 || s.stack / s.pot > 3)
     throw Error(
       "Full-hand trees support a pot of at least 4 bb and stacks from 1 bb to 3 times the pot",
-    );
-  if (g.hero.length > 4 || g.villain.length > 4)
-    throw Error(
-      "Full-hand trees support up to four exact combinations per player",
     );
   if (s.sizing) throw Error("Use full-hand sizing settings");
   validateFullSizing(s);
@@ -203,15 +201,10 @@ export function configuredFullActions(s, state, betting = fullCandidates(s)) {
 export function convertFull(raw, s, { portable = false } = {}) {
   const g = validateFull(s),
     ranges = [g.hero, g.villain],
-    betting = fullCandidates(s);
-  let count = 0;
-  const compatible = (board) =>
-    g.pairs.filter(
-      (p) =>
-        ![...g.hero[p.i].cards, ...g.villain[p.j].cards].some((c) =>
-          board.includes(c),
-        ),
-    );
+    betting = fullCandidates(s),
+    cardContext = fullCardContext(g);
+  let count = 0,
+    policyValues = 0;
   function visit(data, state) {
     if (++count > FULL_NODE_LIMIT)
       throw Error(
@@ -231,7 +224,10 @@ export function convertFull(raw, s, { portable = false } = {}) {
         throw Error("Missing chance continuation");
       const children = {};
       for (let c = 0; c < 52; c++) {
-        if (state.board.includes(c) || !compatible([...state.board, c]).length)
+        if (
+          state.board.includes(c) ||
+          !cardContext.coverage([...state.board, c]).pairIndices.length
+        )
           continue;
         children[c] = visit(
           portable ? data.children?.[c] : data.dealcards?.[cardName(c)],
@@ -294,8 +290,12 @@ export function convertFull(raw, s, { portable = false } = {}) {
       JSON.stringify(data.strategy.actions) !== JSON.stringify(data.actions)
     )
       throw Error("Native strategy action order differs");
-    const pairs = compatible(state.board),
-      indices = new Set(pairs.map((p) => (state.player ? p.j : p.i)));
+    const indices = cardContext.coverage(state.board).actors[state.player];
+    policyValues += indices.size * actions.length;
+    if (policyValues > FULL_POLICY_VALUE_LIMIT)
+      throw Error(
+        "Tree exceeds the 2,400,000-probability capacity. Reduce ranges, sizes or stacks.",
+      );
     const policy = ranges[state.player].map((h, i) => {
       if (!indices.has(i)) return null;
       const v = portable
@@ -366,7 +366,7 @@ export function boardEquity(h, v, board, cache = new Map()) {
 export function evaluateFull(tree, s, { store = true } = {}) {
   const g = validateFull(s),
     ranges = [g.hero, g.villain],
-    cache = new Map();
+    cardContext = fullCardContext(g);
   const modeled = new WeakSet();
   const locks = modelLocks(tree.root, s);
   const index = (p, player) => (player ? p.j : p.i);
@@ -392,19 +392,8 @@ export function evaluateFull(tree, s, { store = true } = {}) {
             node.winner >= 0
               ? +(node.winner === player)
               : player
-                ? 1 -
-                  boardEquity(
-                    g.hero[p.i].cards,
-                    g.villain[p.j].cards,
-                    node.board,
-                    cache,
-                  )
-                : boardEquity(
-                    g.hero[p.i].cards,
-                    g.villain[p.j].cards,
-                    node.board,
-                    cache,
-                  );
+                ? 1 - cardContext.equity(k, node.board)
+                : cardContext.equity(k, node.board);
           values[index(p, player)] +=
             reach[k] * (eq * pot - node.spent[player]);
         });
@@ -538,8 +527,6 @@ export function evaluateFull(tree, s, { store = true } = {}) {
     ready: true,
     engine: "TexasSolver · independently evaluated full streets",
     coverage: g.pairs.length * 45 * 44,
-    eq: g.pairs.map((p) =>
-      boardEquity(g.hero[p.i].cards, g.villain[p.j].cards, g.board, cache),
-    ),
+    eq: g.pairs.map((_, k) => cardContext.equity(k, g.board)),
   };
 }

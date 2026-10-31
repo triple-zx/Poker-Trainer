@@ -1,3 +1,4 @@
+import { FULL_COMBO_LIMIT, BOUNDED_COMBO_LIMIT } from "./limits.js";
 // Range construction and interchange do not assume an equilibrium strategy.
 const RANKS = "23456789TJQKA",
   SUITS = "cdhs";
@@ -250,7 +251,11 @@ export function validateRangeOrigins(s) {
   )
     throw Error("Invalid range provenance");
   for (const [side, doc] of Object.entries(origins)) {
-    const applied = rangeForFlop(doc, s.flop, s.game === "full" ? 4 : 12);
+    const applied = rangeForFlop(
+      doc,
+      s.flop,
+      s.game === "full" ? FULL_COMBO_LIMIT : BOUNDED_COMBO_LIMIT,
+    );
     if (applied.text !== rangeText(parsePreflopRange(s[side])))
       throw Error("Range provenance no longer matches the scenario range");
   }

@@ -1,0 +1,166 @@
+{
+  "schema": 1,
+  "scenario": {
+    "name": "Twelve-combination full-hand verification",
+    "flop": "7c6d2h",
+    "hero": "AsKs:0.75,AsQs:0.5,AhKh:0.75,AhQh:0.5,AdKd:0.75,AdQd:0.5,AcKc:0.75,AcQc:0.5,KsQs:0.25,KhQh:0.25,KdQd:0.25,KcQc:0.25",
+    "villain": "QsQh:0.6,QsQd:0.6,QsQc:0.6,QhQd:0.6,QhQc:0.6,QdQc:0.6,JsJh:0.4,JsJd:0.4,JsJc:0.4,JhJd:0.4,JhJc:0.4,JdJc:0.4",
+    "pot": 4,
+    "stack": 3,
+    "rake": 0,
+    "cap": 0,
+    "tendency": 0,
+    "overrides": {},
+    "deviation": 1,
+    "iterations": 500,
+    "game": "full",
+    "engine": "native",
+    "rangeOrigins": {
+      "hero": {
+        "type": "poker-trainer-range",
+        "schema": 1,
+        "name": "Broadway suited study",
+        "range": "AsKs:0.75,AsQs:0.5,AhKh:0.75,AhQh:0.5,AdKd:0.75,AdQd:0.5,AcKc:0.75,AcQc:0.5,KsQs:0.25,KhQh:0.25,KdQd:0.25,KcQc:0.25",
+        "originalRange": "AsKs:0.75,AsQs:0.5,AhKh:0.75,AhQh:0.5,AdKd:0.75,AdQd:0.5,AcKc:0.75,AcQc:0.5,KsQs:0.25,KhQh:0.25,KdQd:0.25,KcQc:0.25",
+        "context": {
+          "tableFormat": "unspecified",
+          "position": "",
+          "opponentPosition": "",
+          "history": "",
+          "betSizes": "",
+          "stackBB": null,
+          "rakePercent": null,
+          "rakeCapBB": null,
+          "anteBB": null
+        },
+        "source": {
+          "label": "Original synthetic study fixture",
+          "url": "",
+          "license": "",
+          "notes": "Not a GTO preflop recommendation"
+        }
+      },
+      "villain": {
+        "type": "poker-trainer-range",
+        "schema": 1,
+        "name": "Pocket pair study",
+        "range": "QsQh:0.6,QsQd:0.6,QsQc:0.6,QhQd:0.6,QhQc:0.6,QdQc:0.6,JsJh:0.4,JsJd:0.4,JsJc:0.4,JhJd:0.4,JhJc:0.4,JdJc:0.4",
+        "originalRange": "QsQh:0.6,QsQd:0.6,QsQc:0.6,QhQd:0.6,QhQc:0.6,QdQc:0.6,JsJh:0.4,JsJd:0.4,JsJc:0.4,JhJd:0.4,JhJc:0.4,JdJc:0.4",
+        "context": {
+          "tableFormat": "unspecified",
+          "position": "",
+          "opponentPosition": "",
+          "history": "",
+          "betSizes": "",
+          "stackBB": null,
+          "rakePercent": null,
+          "rakeCapBB": null,
+          "anteBB": null
+        },
+        "source": {
+          "label": "Original synthetic study fixture",
+          "url": "",
+          "license": "",
+          "notes": ""
+        }
+      }
+    },
+    "fullTendencies": {
+      "classes": {
+        "0": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        },
+        "1": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        },
+        "2": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        },
+        "3": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        },
+        "4": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        },
+        "5": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        },
+        "6": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        },
+        "7": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        },
+        "8": {
+          "bet": -0.5,
+          "raise": -0.5,
+          "call": 0.5
+        }
+      }
+    },
+    "betting": {
+      "flop": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      },
+      "turn": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      },
+      "river": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      }
+    }
+  },
+  "pairs": 120,
+  "nodes": 135996,
+  "nativeRunReused": true,
+  "nativeMs": null,
+  "evaluationMs": 2743.4519,
+  "gap": 0.0000013118379165177885,
+  "nativeGap": null,
+  "packageBytes": 21864835,
+  "processMemoryAtCompletion": {
+    "rss": 692166656,
+    "heapTotal": 612093952,
+    "heapUsed": 490274544,
+    "external": 24802093,
+    "arrayBuffers": 22327646
+  },
+  "trainedHands": 200,
+  "decisions": 392,
+  "streets": [
+    3,
+    4,
+    5
+  ]
+}
