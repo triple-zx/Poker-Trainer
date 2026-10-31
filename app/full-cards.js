@@ -61,7 +61,8 @@ export function fullCardContext(g) {
       return handIds.get(key);
     }),
   );
-  let ranks, turnEquities, flopEquities;
+  let ranks, flopEquities;
+  const turnEquities = new Map();
   const compatible = new Map();
   function coverage(board) {
     const key = runoutKey(board);
@@ -76,18 +77,24 @@ export function fullCardContext(g) {
     return ranks[offset];
   }
   function equity(pairIndex, board) {
-    if (!turnEquities) {
-      turnEquities = new Float64Array(g.pairs.length * 52).fill(NaN);
-      flopEquities = new Float64Array(g.pairs.length).fill(NaN);
-    }
     const pair = g.pairs[pairIndex];
     if (board.length === 5) {
       const hero = rank(ids[0][pair.i], board),
         villain = rank(ids[1][pair.j], board);
       return hero === villain ? 0.5 : +(hero > villain);
     }
-    const table = board.length === 3 ? flopEquities : turnEquities;
-    const offset = board.length === 3 ? pairIndex : pairIndex * 52 + board[3];
+    // A river inspection needs ranks only. Allocate each turn's equity column
+    // on demand, so inspecting one later street does not reserve every turn.
+    let table;
+    if (board.length === 3) {
+      flopEquities ||= new Float64Array(g.pairs.length).fill(NaN);
+      table = flopEquities;
+    } else {
+      if (!turnEquities.has(board[3]))
+        turnEquities.set(board[3], new Float64Array(g.pairs.length).fill(NaN));
+      table = turnEquities.get(board[3]);
+    }
+    const offset = pairIndex;
     if (!Number.isNaN(table[offset])) return table[offset];
     const used = [
       ...g.hero[pair.i].cards,
@@ -110,7 +117,10 @@ export function fullCardContext(g) {
     get numericBytes() {
       return (
         (ranks?.byteLength || 0) +
-        (turnEquities?.byteLength || 0) +
+        [...turnEquities.values()].reduce(
+          (sum, table) => sum + table.byteLength,
+          0,
+        ) +
         (flopEquities?.byteLength || 0)
       );
     },

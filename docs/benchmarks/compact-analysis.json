@@ -1,0 +1,700 @@
+{
+  "baselineRevision": "3bb1a9b154266ac8e4a5ac13ccfc11905f02439c",
+  "platform": "win32",
+  "node": "v24.19.0",
+  "cpu": "12th Gen Intel(R) Core(TM) i7-12700F",
+  "totalMemory": 16923426816,
+  "comparison": "Identical saved trees, ranges, profiles and paths; displayed summaries, conditional pairs/hands and next-card reports hash identically. Fresh processes deserialize the same prepared result so garbage from solver evaluation cannot contaminate memory deltas. Timings exclude loading/conversion/evaluation. Retained analysis heap+buffers after two GC turns, not peak process RAM.",
+  "cases": [
+    {
+      "name": "native12-full",
+      "fixture": ".native/expanded-ranges.json",
+      "workload": "full",
+      "before": [
+        {
+          "workload": "full",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "flop",
+              "ms": 1137.1344
+            },
+            {
+              "name": "turn",
+              "ms": 1.9412999999999556
+            },
+            {
+              "name": "river",
+              "ms": 0.7234000000000833
+            },
+            {
+              "name": "nextCards",
+              "ms": 67.57899999999995
+            }
+          ],
+          "elapsedMs": 1207.3781,
+          "retainedBytes": 10010192,
+          "before": {
+            "rss": 367853568,
+            "heapTotal": 329506816,
+            "heapUsed": 190490048,
+            "external": 2524027,
+            "arrayBuffers": 143787
+          },
+          "after": {
+            "rss": 395304960,
+            "heapTotal": 337637376,
+            "heapUsed": 200500240,
+            "external": 2566383,
+            "arrayBuffers": 143787
+          },
+          "digest": "7b4728ce1a7f5c09cb5e9e5f7f9184d814872abf3d019024dad71249dda224d2",
+          "hands": [
+            12,
+            12
+          ],
+          "rootEquity": 0.2502673796791443
+        },
+        {
+          "workload": "full",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "flop",
+              "ms": 1159.9200999999998
+            },
+            {
+              "name": "turn",
+              "ms": 2.01299999999992
+            },
+            {
+              "name": "river",
+              "ms": 0.714200000000119
+            },
+            {
+              "name": "nextCards",
+              "ms": 67.95119999999997
+            }
+          ],
+          "elapsedMs": 1230.5984999999998,
+          "retainedBytes": 10010296,
+          "before": {
+            "rss": 367927296,
+            "heapTotal": 329244672,
+            "heapUsed": 190489976,
+            "external": 2524027,
+            "arrayBuffers": 143787
+          },
+          "after": {
+            "rss": 395431936,
+            "heapTotal": 337637376,
+            "heapUsed": 200500272,
+            "external": 2566383,
+            "arrayBuffers": 143787
+          },
+          "digest": "7b4728ce1a7f5c09cb5e9e5f7f9184d814872abf3d019024dad71249dda224d2",
+          "hands": [
+            12,
+            12
+          ],
+          "rootEquity": 0.2502673796791443
+        },
+        {
+          "workload": "full",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "flop",
+              "ms": 1153.0027999999998
+            },
+            {
+              "name": "turn",
+              "ms": 1.858699999999999
+            },
+            {
+              "name": "river",
+              "ms": 0.6914000000001579
+            },
+            {
+              "name": "nextCards",
+              "ms": 68.48700000000008
+            }
+          ],
+          "elapsedMs": 1224.0399,
+          "retainedBytes": 10010160,
+          "before": {
+            "rss": 367763456,
+            "heapTotal": 329244672,
+            "heapUsed": 190490120,
+            "external": 2524027,
+            "arrayBuffers": 143787
+          },
+          "after": {
+            "rss": 395317248,
+            "heapTotal": 337637376,
+            "heapUsed": 200500280,
+            "external": 2566383,
+            "arrayBuffers": 143787
+          },
+          "digest": "7b4728ce1a7f5c09cb5e9e5f7f9184d814872abf3d019024dad71249dda224d2",
+          "hands": [
+            12,
+            12
+          ],
+          "rootEquity": 0.2502673796791443
+        }
+      ],
+      "after": [
+        {
+          "workload": "full",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "flop",
+              "ms": 130.08589999999992
+            },
+            {
+              "name": "turn",
+              "ms": 2.0996999999999844
+            },
+            {
+              "name": "river",
+              "ms": 0.5992999999999711
+            },
+            {
+              "name": "nextCards",
+              "ms": 60.76369999999997
+            }
+          ],
+          "elapsedMs": 193.54859999999985,
+          "retainedBytes": 870568,
+          "before": {
+            "rss": 367886336,
+            "heapTotal": 328982528,
+            "heapUsed": 190232776,
+            "external": 2524027,
+            "arrayBuffers": 143787
+          },
+          "after": {
+            "rss": 387223552,
+            "heapTotal": 329768960,
+            "heapUsed": 190795184,
+            "external": 2874543,
+            "arrayBuffers": 451947
+          },
+          "digest": "7b4728ce1a7f5c09cb5e9e5f7f9184d814872abf3d019024dad71249dda224d2",
+          "hands": [
+            12,
+            12
+          ],
+          "rootEquity": 0.2502673796791443
+        },
+        {
+          "workload": "full",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "flop",
+              "ms": 129.34310000000005
+            },
+            {
+              "name": "turn",
+              "ms": 2.044399999999996
+            },
+            {
+              "name": "river",
+              "ms": 0.6642000000000507
+            },
+            {
+              "name": "nextCards",
+              "ms": 61.38250000000005
+            }
+          ],
+          "elapsedMs": 193.43420000000015,
+          "retainedBytes": 870232,
+          "before": {
+            "rss": 368254976,
+            "heapTotal": 329244672,
+            "heapUsed": 190232704,
+            "external": 2524027,
+            "arrayBuffers": 143787
+          },
+          "after": {
+            "rss": 388100096,
+            "heapTotal": 329506816,
+            "heapUsed": 190794776,
+            "external": 2874543,
+            "arrayBuffers": 451947
+          },
+          "digest": "7b4728ce1a7f5c09cb5e9e5f7f9184d814872abf3d019024dad71249dda224d2",
+          "hands": [
+            12,
+            12
+          ],
+          "rootEquity": 0.2502673796791443
+        },
+        {
+          "workload": "full",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "flop",
+              "ms": 127.78989999999999
+            },
+            {
+              "name": "turn",
+              "ms": 1.8267999999999347
+            },
+            {
+              "name": "river",
+              "ms": 0.5951000000000022
+            },
+            {
+              "name": "nextCards",
+              "ms": 60.339399999999955
+            }
+          ],
+          "elapsedMs": 190.55119999999988,
+          "retainedBytes": 870216,
+          "before": {
+            "rss": 367878144,
+            "heapTotal": 328720384,
+            "heapUsed": 190232776,
+            "external": 2524027,
+            "arrayBuffers": 143787
+          },
+          "after": {
+            "rss": 387469312,
+            "heapTotal": 329244672,
+            "heapUsed": 190794832,
+            "external": 2874543,
+            "arrayBuffers": 451947
+          },
+          "digest": "7b4728ce1a7f5c09cb5e9e5f7f9184d814872abf3d019024dad71249dda224d2",
+          "hands": [
+            12,
+            12
+          ],
+          "rootEquity": 0.2502673796791443
+        }
+      ],
+      "median": {
+        "beforeMs": 1224.0399,
+        "afterMs": 193.43420000000015,
+        "beforeRetainedBytes": 10010192,
+        "afterRetainedBytes": 870232
+      }
+    },
+    {
+      "name": "native96-later",
+      "fixture": ".native/broad96-scenario.json",
+      "workload": "later",
+      "before": [
+        {
+          "workload": "later",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "turn",
+              "ms": 2007.7881
+            },
+            {
+              "name": "river",
+              "ms": 22.11239999999998
+            },
+            {
+              "name": "nextCards",
+              "ms": 1034.4995999999996
+            }
+          ],
+          "elapsedMs": 3064.4001,
+          "retainedBytes": 27632016,
+          "before": {
+            "rss": 183558144,
+            "heapTotal": 55042048,
+            "heapUsed": 19917384,
+            "external": 77932728,
+            "arrayBuffers": 75552488
+          },
+          "after": {
+            "rss": 359809024,
+            "heapTotal": 191361024,
+            "heapUsed": 47549400,
+            "external": 77975084,
+            "arrayBuffers": 75552488
+          },
+          "digest": "72e0bad96facc18d5d2419e4d5d92f424e2e7bc81bd0a077bba3437589d78422",
+          "hands": [
+            96,
+            96
+          ],
+          "rootEquity": null
+        },
+        {
+          "workload": "later",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "turn",
+              "ms": 2004.0384999999999
+            },
+            {
+              "name": "river",
+              "ms": 21.820500000000266
+            },
+            {
+              "name": "nextCards",
+              "ms": 1052.9206999999997
+            }
+          ],
+          "elapsedMs": 3078.7797,
+          "retainedBytes": 27630104,
+          "before": {
+            "rss": 184217600,
+            "heapTotal": 54517760,
+            "heapUsed": 19917296,
+            "external": 77932728,
+            "arrayBuffers": 75552488
+          },
+          "after": {
+            "rss": 359895040,
+            "heapTotal": 189263872,
+            "heapUsed": 47547400,
+            "external": 77975084,
+            "arrayBuffers": 75552488
+          },
+          "digest": "72e0bad96facc18d5d2419e4d5d92f424e2e7bc81bd0a077bba3437589d78422",
+          "hands": [
+            96,
+            96
+          ],
+          "rootEquity": null
+        },
+        {
+          "workload": "later",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "turn",
+              "ms": 2010.4633000000001
+            },
+            {
+              "name": "river",
+              "ms": 22.002500000000055
+            },
+            {
+              "name": "nextCards",
+              "ms": 1036.2534
+            }
+          ],
+          "elapsedMs": 3068.7192000000005,
+          "retainedBytes": 27629792,
+          "before": {
+            "rss": 183656448,
+            "heapTotal": 55042048,
+            "heapUsed": 19917368,
+            "external": 77932728,
+            "arrayBuffers": 75552488
+          },
+          "after": {
+            "rss": 360718336,
+            "heapTotal": 189001728,
+            "heapUsed": 47547160,
+            "external": 77975084,
+            "arrayBuffers": 75552488
+          },
+          "digest": "72e0bad96facc18d5d2419e4d5d92f424e2e7bc81bd0a077bba3437589d78422",
+          "hands": [
+            96,
+            96
+          ],
+          "rootEquity": null
+        }
+      ],
+      "after": [
+        {
+          "workload": "later",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "turn",
+              "ms": 49.105500000000006
+            },
+            {
+              "name": "river",
+              "ms": 5.405200000000008
+            },
+            {
+              "name": "nextCards",
+              "ms": 238.5934
+            }
+          ],
+          "elapsedMs": 293.1041,
+          "retainedBytes": 3312256,
+          "before": {
+            "rss": 183545856,
+            "heapTotal": 54255616,
+            "heapUsed": 19658848,
+            "external": 77932728,
+            "arrayBuffers": 75552488
+          },
+          "after": {
+            "rss": 246726656,
+            "heapTotal": 89645056,
+            "heapUsed": 21828080,
+            "external": 79118108,
+            "arrayBuffers": 76695512
+          },
+          "digest": "72e0bad96facc18d5d2419e4d5d92f424e2e7bc81bd0a077bba3437589d78422",
+          "hands": [
+            96,
+            96
+          ],
+          "rootEquity": null
+        },
+        {
+          "workload": "later",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "turn",
+              "ms": 49.54839999999999
+            },
+            {
+              "name": "river",
+              "ms": 5.833600000000018
+            },
+            {
+              "name": "nextCards",
+              "ms": 236.35109999999997
+            }
+          ],
+          "elapsedMs": 291.7331,
+          "retainedBytes": 3312168,
+          "before": {
+            "rss": 183496704,
+            "heapTotal": 54255616,
+            "heapUsed": 19658888,
+            "external": 77932728,
+            "arrayBuffers": 75552488
+          },
+          "after": {
+            "rss": 246808576,
+            "heapTotal": 90169344,
+            "heapUsed": 21828032,
+            "external": 79118108,
+            "arrayBuffers": 76695512
+          },
+          "digest": "72e0bad96facc18d5d2419e4d5d92f424e2e7bc81bd0a077bba3437589d78422",
+          "hands": [
+            96,
+            96
+          ],
+          "rootEquity": null
+        },
+        {
+          "workload": "later",
+          "profile": "model",
+          "paths": {
+            "chance3": "root/a:CHECK/a:CHECK",
+            "action4": "root/a:CHECK/a:CHECK/c:2c",
+            "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+            "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+          },
+          "timings": [
+            {
+              "name": "turn",
+              "ms": 50.07849999999999
+            },
+            {
+              "name": "river",
+              "ms": 5.3437000000000126
+            },
+            {
+              "name": "nextCards",
+              "ms": 239.70880000000002
+            }
+          ],
+          "elapsedMs": 295.13100000000003,
+          "retainedBytes": 3312072,
+          "before": {
+            "rss": 183676928,
+            "heapTotal": 53993472,
+            "heapUsed": 19658920,
+            "external": 77932728,
+            "arrayBuffers": 75552488
+          },
+          "after": {
+            "rss": 246427648,
+            "heapTotal": 90169344,
+            "heapUsed": 21827968,
+            "external": 79118108,
+            "arrayBuffers": 76695512
+          },
+          "digest": "72e0bad96facc18d5d2419e4d5d92f424e2e7bc81bd0a077bba3437589d78422",
+          "hands": [
+            96,
+            96
+          ],
+          "rootEquity": null
+        }
+      ],
+      "median": {
+        "beforeMs": 3068.7192000000005,
+        "afterMs": 293.1041,
+        "beforeRetainedBytes": 27630104,
+        "afterRetainedBytes": 3312168
+      }
+    }
+  ],
+  "broadAfterOnly": {
+    "workload": "full",
+    "profile": "model",
+    "paths": {
+      "chance3": "root/a:CHECK/a:CHECK",
+      "action4": "root/a:CHECK/a:CHECK/c:2c",
+      "chance4": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK",
+      "action5": "root/a:CHECK/a:CHECK/c:2c/a:CHECK/a:CHECK/c:2d"
+    },
+    "timings": [
+      {
+        "name": "flop",
+        "ms": 1098.1196
+      },
+      {
+        "name": "turn",
+        "ms": 12.551899999999932
+      },
+      {
+        "name": "river",
+        "ms": 5.525100000000066
+      },
+      {
+        "name": "nextCards",
+        "ms": 497.7092
+      }
+    ],
+    "elapsedMs": 1613.9058,
+    "retainedBytes": 7523696,
+    "before": {
+      "rss": 183627776,
+      "heapTotal": 53993472,
+      "heapUsed": 19658992,
+      "external": 77932728,
+      "arrayBuffers": 75552488
+    },
+    "after": {
+      "rss": 247193600,
+      "heapTotal": 90693632,
+      "heapUsed": 22716288,
+      "external": 82441484,
+      "arrayBuffers": 80018888
+    },
+    "digest": "82331bc2aad3a7f76cad5c093063d2b055c67e39673ae35802a65266a4c9b233",
+    "hands": [
+      96,
+      96
+    ],
+    "rootEquity": 0.5000000000000193
+  },
+  "publicRootAfterOnly": {
+    "workload": "public-root",
+    "profile": "baseline",
+    "paths": {},
+    "timings": [
+      {
+        "name": "flop",
+        "ms": 33254.3233
+      }
+    ],
+    "elapsedMs": 33254.3233,
+    "retainedBytes": 110312756,
+    "before": {
+      "rss": 645951488,
+      "heapTotal": 149938176,
+      "heapUsed": 14582160,
+      "external": 80511867,
+      "arrayBuffers": 78131627
+    },
+    "after": {
+      "rss": 731246592,
+      "heapTotal": 181067776,
+      "heapUsed": 45000328,
+      "external": 160447409,
+      "arrayBuffers": 158026215
+    },
+    "digest": "3a001e7768bb6a29991bc5cd8d88f86edcb0936a259e9fdc568634e3922311bd",
+    "hands": [
+      319,
+      621
+    ],
+    "rootEquity": 0.5187508031768971
+  },
+  "limitations": "No before/after claim for the 96-hand flop or isolated public-root cases. Public-input limits are relaxed only in an ignored copy; production remains 96 hands/2.4M probabilities. Public chart weights are not included. No native solve runs."
+}

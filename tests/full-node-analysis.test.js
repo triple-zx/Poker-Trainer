@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT, cards } from "../app/engine.js";
+import { boardEquity } from "../app/full-game.js";
 import {
   analyzeNode,
   nodeReach,
@@ -181,4 +182,62 @@ test("weighted matrices distinguish pairs, suited and offsuit classes", () => {
     1,
   );
   assert.equal(matrix.find((c) => c.label === "AKs").combos.length, 2);
+});
+
+test("compact analysis cache preserves filtered pair identities, profile changes and scenario isolation", () => {
+  const cache = new Map();
+  function check(solution, path, profile) {
+    const report = analyzeNode(solution, path, profile, cache);
+    assert.deepEqual(report, analyzeNode(solution, path, profile));
+    const g = report.game;
+    const values = g.pairs.map((p) =>
+      boardEquity(g.hero[p.i].cards, g.villain[p.j].cards, g.board),
+    );
+    for (const side of ["hero", "villain"]) {
+      const key = side === "hero" ? "i" : "j";
+      report[side].hands.forEach((hand, i) => {
+        const indices = g.pairs.flatMap((p, k) => (p[key] === i ? [k] : []));
+        const mass = indices.reduce((sum, k) => sum + g.pairs[k].weight, 0);
+        close(hand.mass, mass);
+        if (mass)
+          close(
+            hand.equity,
+            indices.reduce(
+              (sum, k) =>
+                sum +
+                g.pairs[k].weight *
+                  (side === "hero" ? values[k] : 1 - values[k]),
+              0,
+            ) / mass,
+          );
+        else assert.equal(hand.equity, null);
+      });
+    }
+    assert.equal(
+      cache.size,
+      1,
+      "Reusing an explorer retains one scenario's compact context",
+    );
+  }
+  for (const profile of ["baseline", "model"])
+    for (const path of [
+      called + "/c:9d/a:CHECK/a:CHECK/c:Kh",
+      called + "/c:9d",
+      "root",
+      called,
+    ])
+      check(result, path, profile);
+  // Same shared cache, changed range order/weights, then a different fixed flop.
+  for (const changes of [
+    { hero: "9h8h:.3,AhKh", villain: "9h9d:.7,QcQd" },
+    { hero: "AhKh:.01,9h8h", villain: "QcQd:.2,9h9d" },
+    { flop: "AcJdTs" },
+  ]) {
+    const changed = structuredClone(result);
+    Object.assign(changed.scenario, changes);
+    changed.root.board = cards(changed.scenario.flop);
+    check(changed, "root", "baseline");
+  }
+  cache.clear();
+  check(result, "root", "model");
 });

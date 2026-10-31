@@ -1,8 +1,33 @@
 import { validate, cardName, RANKS } from "./engine.js";
 import { actionKey } from "./full-model.js";
-import { boardEquity } from "./full-game.js";
+import { fullCardContext } from "./full-cards.js";
 import { summarizeRange } from "./analytics.js";
 import { matrixValue } from "./full-matrix.js";
+
+const EQUITY_CONTEXT = Symbol("node equity context");
+function analysisEquities(result, game, cache) {
+  // Equity depends on cards, not action reach. Keep original pair indices even
+  // when a later history removes pairs. One cache slot prevents an explorer
+  // reused for another scenario from retaining all earlier equity tables.
+  const { flop, hero, villain } = result.scenario;
+  const basis = JSON.stringify([flop, hero, villain]);
+  let entry = cache.get(EQUITY_CONTEXT);
+  if (!entry || entry.basis !== basis) {
+    const original = validate(result.scenario),
+      width = original.villain.length,
+      indices = new Int32Array(original.hero.length * width).fill(-1);
+    original.pairs.forEach((pair, index) => {
+      indices[pair.i * width + pair.j] = index;
+    });
+    entry = { basis, width, indices, cards: fullCardContext(original) };
+    cache.set(EQUITY_CONTEXT, entry);
+  }
+  return game.pairs.map((pair) => {
+    const index = entry.indices[pair.i * entry.width + pair.j];
+    if (index < 0) throw Error("Unknown private-hand pair in node analysis");
+    return entry.cards.equity(index, game.board);
+  });
+}
 
 export function nodePolicy(node, profile) {
   if (profile === "baseline") return node.policy;
@@ -112,9 +137,7 @@ export function analyzeNode(
   if (!context.reachable)
     return { ...context, hero: null, villain: null, frequencies: null };
   const g = context.game;
-  const equities = g.pairs.map((p) =>
-    boardEquity(g.hero[p.i].cards, g.villain[p.j].cards, g.board, cache),
-  );
+  const equities = analysisEquities(result, g, cache);
   const hero = summarizeRange(g, equities),
     villain = summarizeRange(g, equities, "villain");
   const node = context.node,

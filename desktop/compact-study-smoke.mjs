@@ -25,6 +25,20 @@ export async function compactStudySmoke(contents) {
     expect($('#analysis-content').textContent.includes('Root action EVs'),'Root feedback not rendered');
     expect(!$('#analysis-content').textContent.includes('NaN'),'Invalid analysis number');
     const explorer=()=>[...$('#analysis-content').querySelectorAll('section')].find(s=>s.querySelector('h3')?.textContent==='Explore the saved tree');
+    const analysisStarted=performance.now();
+    explorer().querySelector('.node-ranges').open=true;
+    await wait(()=>explorer().querySelectorAll('.node-matrix').length===2);
+    const analysis={coldMs:performance.now()-analysisStarted};
+    for(const profile of ['baseline','model']) {
+      const select=explorer().querySelector('.node-ranges select');
+      select.value=profile; select.dispatchEvent(new Event('change'));
+      await wait(()=>explorer().querySelector('.node-ranges select').value===profile&&explorer().querySelectorAll('.node-matrix').length===2);
+      const panel=explorer().querySelector('.node-ranges');
+      expect(panel.querySelectorAll('tbody tr').length===192,'Conditional range report lost hands');
+      expect([...panel.querySelectorAll('.node-matrix')].every(grid=>grid.children.length===169),'Conditional matrices incomplete');
+      expect(!/NaN|Infinity/.test(panel.textContent),'Invalid range analysis value');
+    }
+    Object.assign(analysis,{hands:192,matrixCells:338,profiles:true});
     [...explorer().querySelector('.toolbar').querySelectorAll('button')].find(b=>b.textContent==='Check').click();
     const fields=explorer().querySelector('fieldset');
     expect(fields,'Opponent editor missing');
@@ -48,7 +62,7 @@ export async function compactStudySmoke(contents) {
       expect(record.decisions.map(d=>d.street).join(',')==='Flop,Turn,River','Compact training missed a street');
       expect(record.decisions.every(d=>Array.isArray(d.target)&&Array.isArray(d.ev)&&Number.isFinite(d.loss)),'Journal did not preserve numeric row arrays');
       expect($('#feedback').textContent.includes('Total EV loss'),'Post-hand feedback missing');
-      return {indexedDB:true,exportRows:true,opponentEdit:true,streets:record.decisions.map(d=>d.street),journalArrays:true};
+      return {indexedDB:true,exportRows:true,analysis,opponentEdit:true,streets:record.decisions.map(d=>d.street),journalArrays:true};
     } finally {Math.random=random;}
   })()`);
   assert.deepEqual(report.streets, ["Flop", "Turn", "River"]);

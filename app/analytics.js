@@ -54,8 +54,10 @@ export function summarizeRange(g, eq, side = "hero") {
     ownKey = side === "hero" ? "i" : "j",
     otherKey = side === "hero" ? "j" : "i",
     totalOther = other.reduce((sum, h) => sum + h.weight, 0);
+  const byHand = own.map(() => []);
+  g.pairs.forEach((pair, index) => byHand[pair[ownKey]].push(index));
   const hands = own.map((h, i) => {
-    const indices = g.pairs.flatMap((p, k) => (p[ownKey] === i ? [k] : [])),
+    const indices = byHand[i],
       mass = indices.reduce((sum, k) => sum + g.pairs[k].weight, 0),
       equity = mass
         ? indices.reduce(
