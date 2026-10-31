@@ -54,6 +54,7 @@ const flopViewState = {
   weights: new Map(),
 };
 let disposeFlopReport = () => {};
+let disposeExplorer = () => {};
 let lang = "en",
   result = null,
   checkpoint = [],
@@ -303,6 +304,7 @@ function show(tab) {
     );
     return;
   }
+  if (tab !== "analysis") disposeExplorer();
   document.querySelectorAll(".pane").forEach((p) => (p.hidden = p.id !== tab));
   document.body.dataset.view = tab;
   document
@@ -972,6 +974,8 @@ function matrix(range) {
   );
 }
 function analysis() {
+  disposeExplorer();
+  disposeExplorer = () => {};
   disposeFlopReport();
   disposeFlopReport = flopReportPanel(
     $("#flop-comparison"),
@@ -1018,7 +1022,7 @@ function analysis() {
       summary.textContent = tendencySummary(s, t);
       el.append(summary);
     }
-    fullExplorer(
+    disposeExplorer = fullExplorer(
       el,
       result,
       (path, combo, policy) => {

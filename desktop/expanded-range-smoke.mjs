@@ -47,7 +47,7 @@ export async function expandedRangeSmoke(contents, root, broad = false) {
   let compact = null;
   if (broad) {
     const { compactStudySmoke } = await import("./compact-study-smoke.mjs");
-    compact = await compactStudySmoke(contents);
+    compact = await compactStudySmoke(contents, root);
   }
   await new Promise((resolve) => setTimeout(resolve, 250));
   const image = await contents.capturePage();

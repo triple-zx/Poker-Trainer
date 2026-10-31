@@ -7,6 +7,7 @@ import { playerPosition } from "./positions.js";
 import { nodeRangePanel } from "./full-node-analysis-ui.js";
 import { nextCardPanel } from "./full-card-analysis-ui.js";
 import { trainingStreet, trainingAction } from "./training-text.js";
+import { createAnalysisClient } from "./analysis-client.js";
 
 export function fullSizingReport(container, result, t = (en) => en) {
   const chosen = result.selection;
@@ -76,7 +77,8 @@ export function fullExplorer(
   let rangeProfile = "model",
     rangesOpen = false,
     cardsOpen = false;
-  const equityCache = new Map();
+  const analysis = createAnalysisClient();
+  let panels = [];
   for (const step of selectedPath.split("/").slice(1)) {
     const node = trail.at(-1);
     const choices =
@@ -93,6 +95,10 @@ export function fullExplorer(
     trail.push(node.children[choice]);
   }
   function render() {
+    // Cancel the outgoing batch without restarting its queued reports.
+    analysis.cancelAll();
+    panels.forEach((dispose) => dispose());
+    panels = [];
     onNavigate(paths.at(-1));
     section.replaceChildren();
     const node = trail.at(-1);
@@ -102,19 +108,21 @@ export function fullExplorer(
     context.textContent = `${trainingStreet(streetName(node.board), t)} · ${node.board.map(cardName).join(" ")} · ${t("pot", "底池")} ${(result.scenario.pot + node.spent[0] + node.spent[1]).toFixed(3)} ${t("bb", "大盲")}`;
     section.append(title, context);
     const ranges = () =>
-      nodeRangePanel(section, result, paths.at(-1), {
-        t,
-        profile: rangeProfile,
-        open: rangesOpen,
-        cache: equityCache,
-        onOpen: (open) => {
-          rangesOpen = open;
-        },
-        onProfile: (profile) => {
-          rangeProfile = profile;
-          render();
-        },
-      });
+      panels.push(
+        nodeRangePanel(section, result, paths.at(-1), {
+          t,
+          profile: rangeProfile,
+          open: rangesOpen,
+          analysis,
+          onOpen: (open) => {
+            rangesOpen = open;
+          },
+          onProfile: (profile) => {
+            rangeProfile = profile;
+            render();
+          },
+        }),
+      );
     if (trail.length > 1) {
       const history = document.createElement("details"),
         summary = document.createElement("summary"),
@@ -180,21 +188,23 @@ export function fullExplorer(
       go.onclick = () => inspect(select.value);
       label.append(select);
       controls.append(label, go);
-      nextCardPanel(section, result, paths.at(-1), {
-        t,
-        node,
-        profile: rangeProfile,
-        open: cardsOpen,
-        cache: equityCache,
-        onOpen: (open) => {
-          cardsOpen = open;
-        },
-        onProfile: (profile) => {
-          rangeProfile = profile;
-          render();
-        },
-        onInspect: inspect,
-      });
+      panels.push(
+        nextCardPanel(section, result, paths.at(-1), {
+          t,
+          node,
+          profile: rangeProfile,
+          open: cardsOpen,
+          analysis,
+          onOpen: (open) => {
+            cardsOpen = open;
+          },
+          onProfile: (profile) => {
+            rangeProfile = profile;
+            render();
+          },
+          onInspect: inspect,
+        }),
+      );
       ranges();
       return;
     }
@@ -411,6 +421,10 @@ export function fullExplorer(
   }
   container.append(section);
   render();
+  return () => {
+    analysis.dispose();
+    panels.forEach((dispose) => dispose());
+  };
 }
 
 export function fullFrequencyReport(container, records, t = (en) => en) {
