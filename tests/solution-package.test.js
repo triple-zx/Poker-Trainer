@@ -21,6 +21,7 @@ import {
   childPath,
 } from "../app/full-model.js";
 import { FullSession } from "../app/full-session.js";
+import { rangeDocument } from "../app/preflop-ranges.js";
 
 const scenario = {
   ...DEFAULT,
@@ -73,6 +74,33 @@ const original = evaluateFull(
 const exported = JSON.stringify(
   solutionPackage({ ...original, records: [{ secret: "personal journal" }] }),
 );
+
+test("full solution schema 5 preserves range provenance without changing policies or EVs", () => {
+  const source = rangeDocument({
+    type: "poker-trainer-range",
+    schema: 1,
+    name: "Source-tagged study subset",
+    range: "AhKh",
+    originalRange: "AKs",
+    context: { tableFormat: "6max", position: "BTN", stackBB: 100 },
+    source: { label: "Original study model", notes: "No equilibrium claim" },
+  });
+  const updated = remodelSolution(original, {
+    ...scenario,
+    rangeOrigins: { hero: source },
+  }).result;
+  const pkg = solutionPackage(updated);
+  assert.equal(pkg.schema, 5);
+  const restored = restorePackage(JSON.parse(JSON.stringify(pkg))).result;
+  assert.deepEqual(restored.scenario.rangeOrigins.hero, source);
+  assert.equal(restored.gap, original.gap);
+  assert.equal(restored.modelEV, original.modelEV);
+  assert.deepEqual(restored.root.ev, original.root.ev);
+  assert.equal(restored.nodes, original.nodes);
+  const bad = structuredClone(pkg);
+  bad.scenario.rangeOrigins.hero.range = "AdKd:1";
+  assert.throws(() => restorePackage(bad), /provenance/);
+});
 
 test("in-position packages keep actor/range identity, root opponent edits and all-street training", () => {
   // Same physical game: swap logical hero/opponent, leave the physical policies intact.

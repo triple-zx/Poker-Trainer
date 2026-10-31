@@ -188,7 +188,7 @@ else {
             profile,
           );
           const ready = await contents.executeJavaScript(
-            "document.title.includes('Poker Trainer') && typeof window.desktopSolver?.solve === 'function' && !!document.querySelector('#form') && document.querySelector('#engine').value === 'native'",
+            "document.title.includes('Poker Trainer') && typeof window.desktopSolver?.solve === 'function' && !!document.querySelector('#form') && document.querySelector('#engine').value === 'native' && document.querySelectorAll('#ranges .range-editor-matrix button').length === 169",
           );
           // The private app origin must support File/Blob transfer to workers,
           // otherwise a browser-only import test could miss a desktop failure.

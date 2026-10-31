@@ -67,6 +67,9 @@
         ><button data-tab="history" data-en="04  Review" data-zh="04  复盘">
           04 Review
         </button>
+        <button data-tab="ranges" data-en="05  Ranges" data-zh="05  范围">
+          05 Ranges
+        </button>
       </nav>
       <p id="status" role="status" aria-live="polite"></p>
       <section id="setup" class="pane">
@@ -89,6 +92,7 @@
             Load selected
           </button>
         </div>
+        <div id="range-origins"></div>
         <form id="form">
           <article>
             <label
@@ -629,6 +633,7 @@
           </div>
         </div>
       </section>
+      <section id="ranges" class="pane" hidden></section>
       <section id="analysis" class="pane" hidden>
         <div id="flop-comparison"></div>
         <div id="analysis-content"></div>

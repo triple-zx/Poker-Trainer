@@ -1,5 +1,6 @@
 import { validateSizing } from "./sizing-config.js";
 import { validatePosition } from "./positions.js";
+import { validateRangeOrigins } from "./preflop-ranges.js";
 export const RANKS = "23456789TJQKA",
   SUITS = "cdhs";
 export const DEFAULT = {
@@ -91,6 +92,7 @@ export function validate(s) {
         "Overrides must map opponent combinations to probabilities from 0 to 1",
       );
   validateSizing(s, villain);
+  validateRangeOrigins(s);
   const pairs = [];
   hero.forEach((h, i) =>
     villain.forEach((v, j) => {
