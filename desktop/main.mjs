@@ -265,6 +265,18 @@ else {
             };
             worker.postMessage({profile:'baseline', weightMode:'equal', entries:[{name:'smoke-a'}, {name:'smoke-b'}]});
           })`);
+          const nodeReportWorker =
+            await contents.executeJavaScript(`new Promise((resolve, reject) => {
+            const worker = new Worker('./node-analysis-worker.js', {type:'module'});
+            const timer = setTimeout(() => {worker.terminate(); reject(Error('Node report worker timeout'));}, 10000);
+            worker.onerror = e => {clearTimeout(timer);worker.terminate();reject(Error(e.message));};
+            worker.onmessage = ({data}) => {
+              clearTimeout(timer);worker.terminate();
+              const r=data.report;
+              resolve(data.id===1 && r?.reachable && r.hero.hands.length===1 && r.villain.hands.length===1 && Math.abs(r.hero.equity+r.villain.equity-1)<1e-12 && r.frequencies[0]===1);
+            };
+            worker.postMessage({id:1,type:'node',path:'root',profile:'baseline',result:{scenario:${JSON.stringify(scenario)},root:{type:'action',player:0,board:${JSON.stringify(game.board)},spent:[0,0],street:[0,0],actions:[{kind:'CHECK'}],policy:[[1]],children:[]}}});
+          })`);
           let checkpointUI = null;
           if (process.argv.includes("--checkpoint-smoke")) {
             const { checkpointSmoke } = await import("./checkpoint-smoke.mjs");
@@ -307,6 +319,7 @@ else {
               version: app.getVersion(),
               packageWorker,
               flopReportWorker,
+              nodeReportWorker,
               ...(checkpointUI ? { checkpointUI } : {}),
               ...(expandedRangeUI ? { expandedRangeUI } : {}),
               ...(trainingLanguageUI ? { trainingLanguageUI } : {}),
@@ -319,7 +332,8 @@ else {
               verified.gap < 0.001 &&
               nativeCheckpoints &&
               packageWorker &&
-              flopReportWorker
+              flopReportWorker &&
+              nodeReportWorker
               ? 0
               : 1,
           );

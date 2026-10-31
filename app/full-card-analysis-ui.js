@@ -1,4 +1,5 @@
-import { compareNextCards } from "./full-card-analysis.js";
+import { analysisRequest } from "./analysis-request.js";
+import { analysisTask } from "./analysis-task-ui.js";
 import { CATEGORIES } from "./analytics.js";
 import { fullActionLabel } from "./full-game.js";
 
@@ -15,7 +16,7 @@ const element = (tag, text, parent) => {
   return el;
 };
 export function nextCardPanel(container, result, path, options) {
-  const { t, profile, open, cache, onOpen, onProfile, onInspect } = options;
+  const { t, profile, open, analysis, onOpen, onProfile, onInspect } = options;
   const details = element("details", undefined, container);
   details.className = "node-ranges";
   element(
@@ -36,11 +37,9 @@ export function nextCardPanel(container, result, path, options) {
     element("option", text, select).value = value;
   select.value = profile;
   const content = element("div", undefined, details);
-  let report;
-  function render() {
+  function render(report) {
     content.replaceChildren();
     try {
-      report ||= compareNextCards(result, path, select.value, cache);
       element(
         "p",
         t(
@@ -236,6 +235,13 @@ export function nextCardPanel(container, result, path, options) {
       element("p", e.message, content);
     }
   }
+  const task = analysisTask(
+    content,
+    t,
+    () =>
+      analysis.request(analysisRequest(result, path, select.value, "cards")),
+    render,
+  );
   // The explorer rebuilds both reports so their selected profile stays shared.
   select.onchange = () => {
     onOpen(details.open);
@@ -244,8 +250,10 @@ export function nextCardPanel(container, result, path, options) {
   details.ontoggle = () => {
     if (!details.isConnected) return;
     onOpen(details.open);
-    if (details.open && !report) render();
+    if (details.open && !task.ready) task.load();
+    if (!details.open) task.cancel();
   };
   details.open = open;
-  if (open) render();
+  if (open) task.load();
+  return () => task.dispose();
 }

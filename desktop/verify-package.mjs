@@ -97,6 +97,7 @@ if (
   !result.stdout.includes('"nativeCheckpoints":true') ||
   !result.stdout.includes('"packageWorker":true') ||
   !result.stdout.includes('"flopReportWorker":true') ||
+  !result.stdout.includes('"nodeReportWorker":true') ||
   !result.stdout.includes('"version":' + JSON.stringify(version))
 )
   throw Error("Packaged app smoke test failed");
