@@ -70,13 +70,13 @@ export function fullCardContext(g) {
     return compatible.get(key);
   }
   function rank(id, board) {
+    ranks ||= new Uint32Array(hands.length * 2704);
     const offset = id * 2704 + runoutKey(board);
     if (!ranks[offset]) ranks[offset] = rank7([...hands[id], ...board]);
     return ranks[offset];
   }
   function equity(pairIndex, board) {
-    if (!ranks) {
-      ranks = new Uint32Array(hands.length * 2704);
+    if (!turnEquities) {
       turnEquities = new Float64Array(g.pairs.length * 52).fill(NaN);
       flopEquities = new Float64Array(g.pairs.length).fill(NaN);
     }
@@ -106,6 +106,7 @@ export function fullCardContext(g) {
   return {
     coverage,
     equity,
+    rank: (player, index, board) => rank(ids[player][index], board),
     get numericBytes() {
       return (
         (ranks?.byteLength || 0) +

@@ -9,8 +9,13 @@ import {
   rangeForFlop,
   parsePreflopRange,
   RANGE_TEMPLATES,
+  rangeText,
 } from "../app/preflop-ranges.js";
-import { fullBoardCoverage } from "../app/full-resources.js";
+import {
+  fullBoardCoverage,
+  assertFullCapacity,
+} from "../app/full-resources.js";
+import { FULL_COMBO_LIMIT } from "../app/limits.js";
 import { commands } from "../native/adapter.mjs";
 
 test("compact card tables match independent exact equity on every turn and river", () => {
@@ -58,7 +63,7 @@ test("compact card tables match independent exact equity on every turn and river
   assert.equal(fullCardContext(royal).equity(0, cards("QhJhTh2c3d")), 1);
 });
 
-test("full-hand range application accepts complete twelve-combination study families and rejects thirteen", () => {
+test("full-hand application preserves weighted families and enforces hand and total strategy capacities", () => {
   const source = rangeDocument({
     type: "poker-trainer-range",
     schema: 1,
@@ -87,9 +92,28 @@ test("full-hand range application accepts complete twelve-combination study fami
   const game = validateFull(s);
   assert.equal(game.pairs.length, 120);
   assert.match(commands(s), /set_range_oop AsKs:0.75/);
+  const hands = parsePreflopRange(RANGE_TEMPLATES[0].range).filter(
+    (h) => !h.cards.some((c) => cards(s.flop).includes(c)),
+  );
+  const broadSource = rangeDocument({
+    ...source,
+    range: rangeText(hands.slice(0, FULL_COMBO_LIMIT)),
+  });
+  const broad = {
+    ...s,
+    stack: 1,
+    rangeOrigins: undefined,
+    hero: rangeForFlop(broadSource, s.flop, FULL_COMBO_LIMIT).text,
+  };
+  assert.equal(validateFull(broad).hero.length, 96);
+  assert.ok(assertFullCapacity(broad).withinPolicyBudget);
   assert.throws(
-    () => validateFull({ ...s, hero: s.hero + ",AsJs" }),
-    /at most 12/,
+    () => validateFull({ ...broad, hero: rangeText(hands.slice(0, 97)) }),
+    /at most 96/,
+  );
+  assert.throws(
+    () => assertFullCapacity({ ...broad, stack: 3 }),
+    /probability capacity/,
   );
   assert.throws(
     () =>
