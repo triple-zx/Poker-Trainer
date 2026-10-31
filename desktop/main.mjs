@@ -283,6 +283,13 @@ else {
             );
             trainingLanguageUI = await trainingLanguageSmoke(contents, root);
           }
+          let publicRangeUI = null;
+          if (process.argv.includes("--public-range-smoke")) {
+            const { publicRangeSmoke } = await import(
+              "./public-range-smoke.mjs"
+            );
+            publicRangeUI = await publicRangeSmoke(contents, root);
+          }
           console.log(
             JSON.stringify({
               desktopLoaded: ready,
@@ -293,6 +300,7 @@ else {
               ...(checkpointUI ? { checkpointUI } : {}),
               ...(expandedRangeUI ? { expandedRangeUI } : {}),
               ...(trainingLanguageUI ? { trainingLanguageUI } : {}),
+              ...(publicRangeUI ? { publicRangeUI } : {}),
               url: contents.getURL(),
             }),
           );

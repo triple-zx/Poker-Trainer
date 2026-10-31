@@ -1,0 +1,17 @@
+{
+  "reviewed": "2026-10-31",
+  "source": "https://artgto.com/gto-solutions/",
+  "download": "https://dl.artgto.com/artgto-viewer.zip",
+  "archiveBytes": 1907419,
+  "archiveSha256": "8673a0ab0203b79f4363d58d84a7b6e24abf84c28a97d4e4e8e2f924566de94c",
+  "files": 2606,
+  "validated": 2606,
+  "empty": 311,
+  "minPositiveCombinations": 4,
+  "maxCombinations": 898,
+  "totalIncludedCombinations": 88442,
+  "corpusFingerprint": "53400cc8902e4834aa3318909ca5cb3cb677d75d021aa09346e7d02b9c494b13",
+  "validationMs": 745.4905,
+  "verification": "Independent exact-combination percentage decoder; exact weight equality; canonical text and range-document round trips. This verifies import integrity, not poker equilibrium quality.",
+  "failures": []
+}
