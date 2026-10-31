@@ -78,17 +78,51 @@ function expandToken(token, weight) {
   } else specs.push(classSpec(token));
   return specs.flatMap((s) => expandClass(s, weight));
 }
+// Bracket values are percentages, unlike bare colon weights. Keep grouping
+// separate from expansion so overlap detection also covers zero-weight groups.
+function* rangeEntries(text) {
+  let group = null,
+    entries = 0;
+  const tokens = text
+    .replace(/\s*:\s*/g, ":")
+    .matchAll(/\[[^\[\]]*\]|[^\s,;\[\]]+|[\[\]]/g);
+  for (const [token] of tokens) {
+    if (token.startsWith("[") || token === "]") {
+      const tag = /^\[(\/?)(\d+(?:\.\d*)?|\.\d+)\]$/.exec(token);
+      if (!tag || Number(tag[2]) > 100)
+        throw Error(
+          "Use matching percentage groups such as [25]AKs[/25], from 0 to 100",
+        );
+      const percent = Number(tag[2]);
+      if (tag[1]) {
+        if (group === null || percent !== group || !entries)
+          throw Error(
+            "Percentage groups must be nonempty with matching opening and closing weights",
+          );
+        group = null;
+      } else {
+        if (group !== null)
+          throw Error("Nested percentage groups are not supported");
+        group = percent;
+        entries = 0;
+      }
+    } else {
+      if (group !== null && token.includes(":"))
+        throw Error("Do not combine colon weights with a percentage group");
+      entries++;
+      yield group === null ? token : `${token}:${group}%`;
+    }
+  }
+  if (group !== null)
+    throw Error("Close the percentage group with its matching weight");
+}
 export function parsePreflopRange(text) {
   if (typeof text !== "string" || text.length > RANGE_FILE_LIMIT)
     throw Error("Range text must be at most 1 MiB");
   if (!text.trim()) return [];
   const seen = new Set(),
     out = [];
-  for (const entry of text
-    .trim()
-    .replace(/\s*:\s*/g, ":")
-    .split(/[,;\s]+/)) {
-    if (!entry) continue;
+  for (const entry of rangeEntries(text)) {
     const parts = entry.split(":");
     if (parts.length > 2) throw Error(`Invalid weight: ${entry}`);
     let weight = 1;

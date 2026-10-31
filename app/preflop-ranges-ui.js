@@ -162,8 +162,8 @@ export function rangeWorkspace(container, { t, scenario, onApply, download }) {
     el(
       "p",
       t(
-        "Examples: QQ+, A5s-A2s:0.5, ATo+, T9s-54s, AhKh:25%. Bare weights are 0–1; zero excludes a combo. AK includes suited and offsuit. Overlapping tokens are rejected. Paste comma-separated class or exact-combination text; raw numerical vectors and proprietary binary files are not supported.",
-        "示例：QQ+、A5s-A2s:0.5、ATo+、T9s-54s、AhKh:25%。普通权重为 0–1，零表示排除。AK 包含同花及非同花。重叠项会被拒绝。支持逗号分隔的牌型或具体组合文本；不支持无标签数值向量或专有二进制文件。",
+        "Examples: QQ+, A5s-A2s:0.5, ATo+, T9s-54s, AhKh:25%. Bare colon weights are 0–1; bracket groups use percentages: [25]AKs,QQ[/25]. Zero excludes a combo. AK includes suited and offsuit. Overlapping tokens, nested groups and double weights are rejected. Raw numerical vectors and proprietary binary files are not supported.",
+        "示例：QQ+、A5s-A2s:0.5、ATo+、T9s-54s、AhKh:25%。普通冒号权重为 0–1；方括号分组使用百分比，如 [25]AKs,QQ[/25]。零表示排除。AK 包含同花及非同花。重叠项、嵌套分组及重复指定权重会被拒绝。不支持无标签数值向量或专有二进制文件。",
       ),
       container,
     ).className = "hint";

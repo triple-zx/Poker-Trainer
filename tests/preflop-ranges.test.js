@@ -70,13 +70,52 @@ test("range parsing rejects ambiguity, malformed weights and overlapping tokens"
     "KTs-76s",
     "44-A4",
     "AA++",
-    "[50]AA[/50]",
     "0.1 0.2",
   ])
     assert.throws(() => parse(value), undefined, value);
   assert.equal(parse("").length, 0);
   assert.equal(parse("AA:1e-4")[0].weight, 0.0001);
   assert.deepEqual(parse("AA: .5; AKs:25%\nKQo"), parse("AA:.5,AKs:.25,KQo"));
+});
+test("percentage groups preserve fractional weights, suits and canonical range provenance", () => {
+  const source = "[0.5]AhKh,AdKd[/0.50], [25]QQ[/25][100]A5s-A2s[/100]; KQo:.5";
+  const expected = parse("AhKh:.005,AdKd:.005,QQ:.25,A5s-A2s,KQo:.5");
+  assert.deepEqual(parse(source), expected);
+  const imported = importRangeFile(source, "Study.txt");
+  assert.equal(imported.range, rangeText(expected));
+  assert.equal(imported.originalRange, imported.range);
+  assert.deepEqual(importRangeFile(JSON.stringify(imported)), imported);
+  assert.deepEqual(parse("[0]AA[/0], AKs"), parse("AKs"));
+  assert.equal(
+    parse(`[12.345]${RANGE_TEMPLATES[0].range.replace(/:1/g, "")}[/12.345]`)
+      .length,
+    1326,
+  );
+  const applied = rangeForFlop(doc("[25]AKs[/25]"), "As 7d 2c", 12);
+  assert.equal(applied.blocked, 1);
+  assert.ok(parse(applied.text).every((h) => h.weight === 0.25));
+});
+test("malformed or conflicting percentage groups fail without a partial range", () => {
+  for (const text of [
+    "[50]AA",
+    "AA[/50]",
+    "[25]AA[/50]",
+    "[25][/25]",
+    "[25]AA[50]KK[/50][/25]",
+    "[50]AA:.5[/50]",
+    "[101]AA[/101]",
+    "[-1]AA[/-1]",
+    "[NaN]AA[/NaN]",
+    "[50%]AA[/50%]",
+    "[5e1]AA[/5e1]",
+    "[50AA",
+    "AA]",
+    "[50]AA[/50]AA",
+    "[0]AhKh[/0],[25]KhAh[/25]",
+    "[25]AA[/25], AsAh:.25",
+    "AA, [25]KK[/25] trailing",
+  ])
+    assert.throws(() => parse(text), undefined, text);
 });
 test("range matrix preserves suit-specific weights and correct class denominators", () => {
   const matrix = preflopMatrix(parse("AhKh:.5,AdKd:1,QsQh:.6"));
