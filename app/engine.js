@@ -1,6 +1,7 @@
 import { validateSizing } from "./sizing-config.js";
 import { validatePosition } from "./positions.js";
 import { validateRangeOrigins } from "./preflop-ranges.js";
+import { FULL_COMBO_LIMIT, BOUNDED_COMBO_LIMIT } from "./limits.js";
 export const RANKS = "23456789TJQKA",
   SUITS = "cdhs";
 export const DEFAULT = {
@@ -27,7 +28,7 @@ export function cards(text) {
   return ids;
 }
 export const cardName = (c) => RANKS[Math.floor(c / 4)] + SUITS[c % 4];
-export function range(text, board) {
+export function range(text, board, limit = BOUNDED_COMBO_LIMIT) {
   if (typeof text !== "string") throw Error("Range must be text");
   const seen = new Set();
   const out = text.split(",").map((entry) => {
@@ -49,8 +50,10 @@ export function range(text, board) {
       throw Error("A range card overlaps the flop");
     return { cards: hand, weight, label: hand.map(cardName).join("") };
   });
-  if (out.length > 12)
-    throw Error("This release supports at most 12 combinations per player");
+  if (out.length > limit)
+    throw Error(
+      `This release supports at most ${limit} combinations per player`,
+    );
   return out;
 }
 export function validate(s) {
@@ -58,8 +61,9 @@ export function validate(s) {
   validatePosition(s);
   const board = cards(s.flop);
   if (board.length !== 3) throw Error("Choose exactly three flop cards");
-  const hero = range(s.hero, board),
-    villain = range(s.villain, board);
+  const limit = s.game === "full" ? FULL_COMBO_LIMIT : BOUNDED_COMBO_LIMIT;
+  const hero = range(s.hero, board, limit),
+    villain = range(s.villain, board, limit);
   for (const [key, min, max] of [
     ["pot", 0.01, 10000],
     ["stack", 0.01, 10000],

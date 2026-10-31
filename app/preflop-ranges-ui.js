@@ -1,3 +1,4 @@
+import { FULL_COMBO_LIMIT, BOUNDED_COMBO_LIMIT } from "./limits.js";
 import {
   RANGE_TEMPLATES,
   RANGE_FILE_LIMIT,
@@ -427,8 +428,8 @@ export function rangeWorkspace(container, { t, scenario, onApply, download }) {
     el(
       "p",
       t(
-        "Applying removes only combinations blocked by the configured flop, preserves the remaining weights and records the source. Full-hand solves currently accept four exact combos per player; bounded drills accept twelve. Larger ranges stay available in this library and are never silently sampled. Changing a range invalidates the active solution and opponent node edits.",
-        "应用时仅移除被已配置翻牌阻断的组合，保留其余权重并记录来源。当前全手牌求解每位玩家最多四个具体组合，有限行动练习最多十二个。更大的范围可保留在库中，不会被静默抽样。更改范围会使当前解及对手节点编辑失效。",
+        `Applying removes only combinations blocked by the configured flop, preserves the remaining weights and records the source. Full-hand solves currently accept ${FULL_COMBO_LIMIT} exact combos per player; bounded drills accept ${BOUNDED_COMBO_LIMIT}. Larger ranges stay available in this library and are never silently sampled. Changing a range invalidates the active solution and opponent node edits.`,
+        `应用时仅移除被已配置翻牌阻断的组合，保留其余权重并记录来源。当前全手牌求解每位玩家最多 ${FULL_COMBO_LIMIT} 个具体组合，有限行动练习最多 ${BOUNDED_COMBO_LIMIT} 个。更大的范围可保留在库中，不会被静默抽样。更改范围会使当前解及对手节点编辑失效。`,
       ),
       apply,
     );
@@ -442,7 +443,7 @@ export function rangeWorkspace(container, { t, scenario, onApply, download }) {
             applied = rangeForFlop(
               current(),
               s.flop,
-              s.game === "full" ? 4 : 12,
+              s.game === "full" ? FULL_COMBO_LIMIT : BOUNDED_COMBO_LIMIT,
             );
           onApply(side, applied);
           status.textContent = t(

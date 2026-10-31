@@ -1308,6 +1308,10 @@ function updateCandidatePreview() {
       resources.append(heading);
       const lines = [
         t(
+          `Baseline probabilities: ${estimate.policyValues.toLocaleString()} / ${estimate.policyValueLimit.toLocaleString()} · ${estimate.withinPolicyBudget ? "within the app's probability capacity" : "too large to precompute"}. Larger ranges may require a smaller action tree.`,
+          `基线概率：${estimate.policyValues.toLocaleString()} / ${estimate.policyValueLimit.toLocaleString()} · ${estimate.withinPolicyBudget ? "未超出应用概率容量" : "过大，无法预计算"}。更大的范围可能需要更小的行动树。`,
+        ),
+        t(
           `Full tree: ${estimate.nodes.toLocaleString()} / ${estimate.nodeLimit.toLocaleString()} nodes · ${estimate.withinNodeBudget ? "within the app's node capacity" : "too large to precompute"}.`,
           `完整树：${estimate.nodes.toLocaleString()} / ${estimate.nodeLimit.toLocaleString()} 个节点 · ${estimate.withinNodeBudget ? "未超出应用节点容量" : "过大，无法预计算"}。`,
         ),

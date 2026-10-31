@@ -7,6 +7,7 @@ import {
   FULL_NODE_LIMIT,
 } from "./full-game.js";
 import { fullCandidates } from "./full-sizing.js";
+import { FULL_POLICY_VALUE_LIMIT } from "./limits.js";
 
 // Count public board coverage as a UNION of compatible deals, not pair count
 // times 45/44. A board may support some private hands and block others.
@@ -102,6 +103,8 @@ export function estimateFullResources(s) {
     compactPolicyBytes: policyValues * 8,
     pairRunouts: g.pairs.length * 45 * 44,
     withinNodeBudget: nodes <= FULL_NODE_LIMIT,
+    withinPolicyBudget: policyValues <= FULL_POLICY_VALUE_LIMIT,
+    policyValueLimit: FULL_POLICY_VALUE_LIMIT,
     nodeLimit: FULL_NODE_LIMIT,
     bettingStates: memo.size,
   };
@@ -112,6 +115,10 @@ export function assertFullCapacity(s) {
   if (!estimate.withinNodeBudget)
     throw Error(
       `Preflight counts ${estimate.nodes.toLocaleString("en-US")} nodes, above the ${FULL_NODE_LIMIT.toLocaleString("en-US")}-node capacity. Reduce candidate sizes or stacks, use Fast instead of Deep, or import a smaller solved scenario. No solver run was started.`,
+    );
+  if (!estimate.withinPolicyBudget)
+    throw Error(
+      `Preflight counts ${estimate.policyValues.toLocaleString("en-US")} probabilities, above the ${FULL_POLICY_VALUE_LIMIT.toLocaleString("en-US")}-probability capacity. Reduce ranges, candidate sizes or stacks. No solver run was started.`,
     );
   return estimate;
 }

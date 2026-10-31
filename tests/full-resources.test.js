@@ -8,6 +8,7 @@ import {
   assertFullCapacity,
 } from "../app/full-resources.js";
 import { run } from "../native/adapter.mjs";
+import { parsePreflopRange, rangeText } from "../app/preflop-ranges.js";
 const sizes = (bet = [50], raise = [100]) =>
   Object.fromEntries(["flop", "turn", "river"].map((k) => [k, { bet, raise }]));
 const scenario = {
@@ -19,6 +20,29 @@ const scenario = {
   stack: 15,
   betting: sizes(),
 };
+
+test("larger ranges cannot multiply the previous probability capacity despite fitting the node limit", async () => {
+  const s = {
+    ...scenario,
+    flop: "7c6d2h",
+    pot: 4,
+    stack: 3,
+    hero: rangeText(parsePreflopRange("AKs,AQs,KQs")),
+    villain: rangeText(parsePreflopRange("QQ,JJ")),
+    betting: sizes([33, 50]),
+  };
+  const estimate = estimateFullResources(s);
+  assert.equal(estimate.nodes, 250374);
+  assert.equal(estimate.policyValues, 2527104);
+  assert.equal(estimate.withinNodeBudget, true);
+  assert.equal(estimate.withinPolicyBudget, false);
+  assert.throws(() => assertFullCapacity(s), /2,400,000-probability capacity/);
+  await assert.rejects(run(s), /No solver run was started/);
+  assert.equal(
+    assertFullCapacity({ ...s, betting: sizes([50]) }).withinPolicyBudget,
+    true,
+  );
+});
 
 test("public coverage unions compatible deals and counts actor rows after card removal", () => {
   assert.deepEqual(fullBoardCoverage(validate(scenario)), {
