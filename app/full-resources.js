@@ -8,6 +8,7 @@ import {
 } from "./full-game.js";
 import { fullCandidates } from "./full-sizing.js";
 import { FULL_POLICY_VALUE_LIMIT } from "./limits.js";
+import { rangeBoardCoverage } from "./full-cards.js";
 
 // Count public board coverage as a UNION of compatible deals, not pair count
 // times 45/44. A board may support some private hands and block others.
@@ -17,26 +18,25 @@ export function fullBoardCoverage(g) {
       [0, 0, 0],
       [0, 0, 0],
     ];
-  const holes = g.pairs.map((p) => [
-    ...g.hero[p.i].cards,
-    ...g.villain[p.j].cards,
-  ]);
-  function count(extra) {
-    const pairs = g.pairs.filter(
-      (_, i) => !extra.some((c) => holes[i].includes(c)),
+  function count(extra, multiplicity = 1) {
+    const coverage = rangeBoardCoverage(
+      [g.hero, g.villain],
+      [...g.board, ...extra],
     );
-    if (!pairs.length) return;
+    if (!coverage.pairCount) return;
     const street = extra.length;
-    boards[street]++;
-    rows[0][street] += new Set(pairs.map((p) => p.i)).size;
-    rows[1][street] += new Set(pairs.map((p) => p.j)).size;
+    boards[street] += multiplicity;
+    rows[0][street] += multiplicity * coverage.actors[0].size;
+    rows[1][street] += multiplicity * coverage.actors[1].size;
   }
   count([]);
   for (let turn = 0; turn < 52; turn++) {
     if (g.board.includes(turn)) continue;
     count([turn]);
-    for (let river = 0; river < 52; river++)
-      if (river !== turn && !g.board.includes(river)) count([turn, river]);
+    // Coverage is invariant to turn/river order; retain both ordered boards
+    // in the totals while computing their private-card blockers only once.
+    for (let river = turn + 1; river < 52; river++)
+      if (!g.board.includes(river)) count([turn, river], 2);
   }
   return { boards, rows };
 }

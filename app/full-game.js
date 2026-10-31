@@ -226,7 +226,7 @@ export function convertFull(raw, s, { portable = false } = {}) {
       for (let c = 0; c < 52; c++) {
         if (
           state.board.includes(c) ||
-          !cardContext.coverage([...state.board, c]).pairIndices.length
+          !cardContext.coverage([...state.board, c]).pairCount
         )
           continue;
         children[c] = visit(

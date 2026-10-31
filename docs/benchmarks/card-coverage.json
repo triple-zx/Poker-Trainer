@@ -1,0 +1,383 @@
+{
+  "baselineRevision": "e7b3119940f0cce7b8e115a2ba2a517b05ea1abe",
+  "node": "v24.19.0",
+  "platform": "win32",
+  "cpu": "12th Gen Intel(R) Core(TM) i7-12700F",
+  "method": "Three fresh-process coverage runs per version, alternating order; identical ranges and every unordered public runout. Heap deltas after GC retain the coverage cache; they are not peak RAM. Complete result hashes verify both existing solved fixtures. Feasibility uses an isolated cap-only-relaxed module copy, no native solve, and a hypothetical pot 4 bb / remaining stack 1 bb minimal all-in tree, not the source preflop game's stack/rake assumptions.",
+  "coverage": [
+    {
+      "combos": 12,
+      "beforeMedianMs": 7.847799999999992,
+      "afterMedianMs": 8.8016,
+      "beforeMedianHeapDelta": 2705648,
+      "afterMedianHeapDelta": 1312752,
+      "runs": {
+        "before": [
+          {
+            "combos": 12,
+            "pairs": 126,
+            "boards": 1226,
+            "elapsedMs": 7.918199999999999,
+            "heapDelta": 2705672,
+            "before": {
+              "rss": 52568064,
+              "heapTotal": 10739712,
+              "heapUsed": 5648792,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 59576320,
+              "heapTotal": 26468352,
+              "heapUsed": 8354464,
+              "external": 2545170,
+              "arrayBuffers": 143611
+            },
+            "digest": "b2d68b1ff20cda24c236a0970921776624e85fb19ff2d5a4e9059509b1162eb8"
+          },
+          {
+            "combos": 12,
+            "pairs": 126,
+            "boards": 1226,
+            "elapsedMs": 7.819299999999998,
+            "heapDelta": 2705648,
+            "before": {
+              "rss": 52469760,
+              "heapTotal": 11001856,
+              "heapUsed": 5649032,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 59437056,
+              "heapTotal": 26468352,
+              "heapUsed": 8354680,
+              "external": 2545170,
+              "arrayBuffers": 143611
+            },
+            "digest": "b2d68b1ff20cda24c236a0970921776624e85fb19ff2d5a4e9059509b1162eb8"
+          },
+          {
+            "combos": 12,
+            "pairs": 126,
+            "boards": 1226,
+            "elapsedMs": 7.847799999999992,
+            "heapDelta": 2705504,
+            "before": {
+              "rss": 52629504,
+              "heapTotal": 11264000,
+              "heapUsed": 5648952,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 59113472,
+              "heapTotal": 26468352,
+              "heapUsed": 8354456,
+              "external": 2545170,
+              "arrayBuffers": 143611
+            },
+            "digest": "b2d68b1ff20cda24c236a0970921776624e85fb19ff2d5a4e9059509b1162eb8"
+          }
+        ],
+        "after": [
+          {
+            "combos": 12,
+            "pairs": 126,
+            "boards": 1226,
+            "elapsedMs": 9.157800000000002,
+            "heapDelta": 1312752,
+            "before": {
+              "rss": 52432896,
+              "heapTotal": 11264000,
+              "heapUsed": 5649600,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 59252736,
+              "heapTotal": 16506880,
+              "heapUsed": 6962352,
+              "external": 2560562,
+              "arrayBuffers": 143611
+            },
+            "digest": "b2d68b1ff20cda24c236a0970921776624e85fb19ff2d5a4e9059509b1162eb8"
+          },
+          {
+            "combos": 12,
+            "pairs": 126,
+            "boards": 1226,
+            "elapsedMs": 8.6646,
+            "heapDelta": 1312752,
+            "before": {
+              "rss": 52510720,
+              "heapTotal": 11264000,
+              "heapUsed": 5649464,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 58925056,
+              "heapTotal": 16506880,
+              "heapUsed": 6962216,
+              "external": 2559730,
+              "arrayBuffers": 143611
+            },
+            "digest": "b2d68b1ff20cda24c236a0970921776624e85fb19ff2d5a4e9059509b1162eb8"
+          },
+          {
+            "combos": 12,
+            "pairs": 126,
+            "boards": 1226,
+            "elapsedMs": 8.8016,
+            "heapDelta": 1312304,
+            "before": {
+              "rss": 52465664,
+              "heapTotal": 11264000,
+              "heapUsed": 5649600,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 59019264,
+              "heapTotal": 16506880,
+              "heapUsed": 6961904,
+              "external": 2559314,
+              "arrayBuffers": 143611
+            },
+            "digest": "b2d68b1ff20cda24c236a0970921776624e85fb19ff2d5a4e9059509b1162eb8"
+          }
+        ]
+      }
+    },
+    {
+      "combos": 96,
+      "beforeMedianMs": 219.9083,
+      "afterMedianMs": 36.316300000000005,
+      "beforeMedianHeapDelta": 102615840,
+      "afterMedianHeapDelta": 6822736,
+      "runs": {
+        "before": [
+          {
+            "combos": 96,
+            "pairs": 8478,
+            "boards": 1226,
+            "elapsedMs": 215.29489999999998,
+            "heapDelta": 102615840,
+            "before": {
+              "rss": 52797440,
+              "heapTotal": 11526144,
+              "heapUsed": 6131040,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 279310336,
+              "heapTotal": 248766464,
+              "heapUsed": 108746880,
+              "external": 2545170,
+              "arrayBuffers": 143611
+            },
+            "digest": "e9f8f4809922639f7b77fc81999d2c69d9844a9f942c91486de4b51bd0d81608"
+          },
+          {
+            "combos": 96,
+            "pairs": 8478,
+            "boards": 1226,
+            "elapsedMs": 221.9648,
+            "heapDelta": 102615840,
+            "before": {
+              "rss": 52981760,
+              "heapTotal": 11526144,
+              "heapUsed": 6131040,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 281210880,
+              "heapTotal": 249815040,
+              "heapUsed": 108746880,
+              "external": 2545170,
+              "arrayBuffers": 143611
+            },
+            "digest": "e9f8f4809922639f7b77fc81999d2c69d9844a9f942c91486de4b51bd0d81608"
+          },
+          {
+            "combos": 96,
+            "pairs": 8478,
+            "boards": 1226,
+            "elapsedMs": 219.9083,
+            "heapDelta": 102615840,
+            "before": {
+              "rss": 52797440,
+              "heapTotal": 11001856,
+              "heapUsed": 6130968,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 280870912,
+              "heapTotal": 249815040,
+              "heapUsed": 108746808,
+              "external": 2545170,
+              "arrayBuffers": 143611
+            },
+            "digest": "e9f8f4809922639f7b77fc81999d2c69d9844a9f942c91486de4b51bd0d81608"
+          }
+        ],
+        "after": [
+          {
+            "combos": 96,
+            "pairs": 8478,
+            "boards": 1226,
+            "elapsedMs": 36.316300000000005,
+            "heapDelta": 6822832,
+            "before": {
+              "rss": 52871168,
+              "heapTotal": 11264000,
+              "heapUsed": 6131456,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 73568256,
+              "heapTotal": 48488448,
+              "heapUsed": 12954288,
+              "external": 2572626,
+              "arrayBuffers": 143611
+            },
+            "digest": "e9f8f4809922639f7b77fc81999d2c69d9844a9f942c91486de4b51bd0d81608"
+          },
+          {
+            "combos": 96,
+            "pairs": 8478,
+            "boards": 1226,
+            "elapsedMs": 38.3834,
+            "heapDelta": 6822736,
+            "before": {
+              "rss": 52912128,
+              "heapTotal": 11526144,
+              "heapUsed": 6131544,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 73502720,
+              "heapTotal": 47964160,
+              "heapUsed": 12954280,
+              "external": 2573250,
+              "arrayBuffers": 143611
+            },
+            "digest": "e9f8f4809922639f7b77fc81999d2c69d9844a9f942c91486de4b51bd0d81608"
+          },
+          {
+            "combos": 96,
+            "pairs": 8478,
+            "boards": 1226,
+            "elapsedMs": 35.7081,
+            "heapDelta": 6822736,
+            "before": {
+              "rss": 52830208,
+              "heapTotal": 11526144,
+              "heapUsed": 6131544,
+              "external": 2502850,
+              "arrayBuffers": 143611
+            },
+            "after": {
+              "rss": 73711616,
+              "heapTotal": 48488448,
+              "heapUsed": 12954280,
+              "external": 2570754,
+              "arrayBuffers": 143611
+            },
+            "digest": "e9f8f4809922639f7b77fc81999d2c69d9844a9f942c91486de4b51bd0d81608"
+          }
+        ]
+      }
+    }
+  ],
+  "results": [
+    {
+      "fixture": ".native/full-sized-scenario.json",
+      "before": {
+        "nodes": 229446,
+        "gap": 0.010176223057286826,
+        "digest": "35900e876c7781e0e1a2205a9939fa7c1aaf4b19d09e2f5b44a754882940b8d6"
+      },
+      "after": {
+        "nodes": 229446,
+        "gap": 0.010176223057286826,
+        "digest": "35900e876c7781e0e1a2205a9939fa7c1aaf4b19d09e2f5b44a754882940b8d6"
+      }
+    },
+    {
+      "fixture": ".native/expanded-ranges.json",
+      "before": {
+        "nodes": 135996,
+        "gap": 0.0000013118379165177885,
+        "digest": "5588d9591304584104dbe26fa2534de1157e2958277f7d403d326caa2af4b2ad"
+      },
+      "after": {
+        "nodes": 135996,
+        "gap": 0.0000013118379165177885,
+        "digest": "5588d9591304584104dbe26fa2534de1157e2958277f7d403d326caa2af4b2ad"
+      }
+    }
+  ],
+  "feasibility": [
+    {
+      "name": "Complete mathematical ranges",
+      "heroCombos": 1176,
+      "villainCombos": 1176,
+      "preflightMs": 1465.3739000000005,
+      "estimate": {
+        "nodes": 21618,
+        "byStreet": [
+          9,
+          441,
+          21168
+        ],
+        "publicBoards": [
+          1,
+          49,
+          2352
+        ],
+        "policyValues": 20791680,
+        "compactPolicyBytes": 166333440,
+        "pairRunouts": 2517086880,
+        "withinNodeBudget": true,
+        "withinPolicyBudget": false,
+        "policyValueLimit": 2400000,
+        "nodeLimit": 600000,
+        "bettingStates": 27
+      }
+    },
+    {
+      "name": "ART/GTO UTG RFI and BB call inputs",
+      "heroCombos": 319,
+      "villainCombos": 621,
+      "preflightMs": 199.7516999999989,
+      "estimate": {
+        "nodes": 21618,
+        "byStreet": [
+          9,
+          441,
+          21168
+        ],
+        "publicBoards": [
+          1,
+          49,
+          2352
+        ],
+        "policyValues": 8309600,
+        "compactPolicyBytes": 66476800,
+        "pairRunouts": 357451380,
+        "withinNodeBudget": true,
+        "withinPolicyBudget": false,
+        "policyValueLimit": 2400000,
+        "nodeLimit": 600000,
+        "bettingStates": 27
+      }
+    }
+  ]
+}

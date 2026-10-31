@@ -10,6 +10,43 @@ function runoutKey(board) {
   return a < b ? a * 52 + b : b * 52 + a;
 }
 
+// Count the Cartesian product of two exact ranges after public/private card
+// removal without materializing its private-hand pairs. Inclusion-exclusion
+// subtracts opponents holding either card, adding back the identical hand once.
+// Input ranges contain unique positive-weight hands, as produced by validation.
+export function rangeBoardCoverage(ranges, board) {
+  const legal = ranges.map((range) => {
+    const cards = new Uint16Array(52),
+      exact = new Set(),
+      indices = [];
+    range.forEach((hand, index) => {
+      const [a, b] = hand.cards;
+      if (board.includes(a) || board.includes(b)) return;
+      indices.push(index);
+      cards[a]++;
+      cards[b]++;
+      exact.add(Math.min(a, b) * 52 + Math.max(a, b));
+    });
+    return { cards, exact, indices };
+  });
+  const actors = [new Set(), new Set()];
+  let pairCount = 0;
+  for (let player = 0; player < 2; player++) {
+    const other = legal[1 - player];
+    for (const index of legal[player].indices) {
+      const [a, b] = ranges[player][index].cards;
+      const count =
+        other.indices.length -
+        other.cards[a] -
+        other.cards[b] +
+        Number(other.exact.has(Math.min(a, b) * 52 + Math.max(a, b)));
+      if (count > 0) actors[player].add(index);
+      if (player === 0) pairCount += count;
+    }
+  }
+  return { pairCount, actors };
+}
+
 export function fullCardContext(g) {
   const ranges = [g.hero, g.villain],
     hands = [],
@@ -28,20 +65,8 @@ export function fullCardContext(g) {
   const compatible = new Map();
   function coverage(board) {
     const key = runoutKey(board);
-    if (!compatible.has(key)) {
-      const legal = ranges.map((range) =>
-        range.map((hand) => !hand.cards.some((c) => board.includes(c))),
-      );
-      const pairIndices = [],
-        actors = [new Set(), new Set()];
-      g.pairs.forEach((pair, k) => {
-        if (!legal[0][pair.i] || !legal[1][pair.j]) return;
-        pairIndices.push(k);
-        actors[0].add(pair.i);
-        actors[1].add(pair.j);
-      });
-      compatible.set(key, { pairIndices, actors });
-    }
+    if (!compatible.has(key))
+      compatible.set(key, rangeBoardCoverage(ranges, board));
     return compatible.get(key);
   }
   function rank(id, board) {

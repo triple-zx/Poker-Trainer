@@ -1,10 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT, cards, validate, equity } from "../app/engine.js";
-import { fullCardContext } from "../app/full-cards.js";
+import { fullCardContext, rangeBoardCoverage } from "../app/full-cards.js";
 import { boardEquity } from "../app/full-game.js";
 import { validateFull } from "../app/full-game.js";
-import { rangeDocument, rangeForFlop } from "../app/preflop-ranges.js";
+import {
+  rangeDocument,
+  rangeForFlop,
+  parsePreflopRange,
+  RANGE_TEMPLATES,
+} from "../app/preflop-ranges.js";
+import { fullBoardCoverage } from "../app/full-resources.js";
 import { commands } from "../native/adapter.mjs";
 
 test("compact card tables match independent exact equity on every turn and river", () => {
@@ -20,10 +26,7 @@ test("compact card tables match independent exact equity on every turn and river
     0,
     "Coverage does not allocate equity tables",
   );
-  assert.deepEqual(
-    before.pairIndices,
-    g.pairs.map((_, k) => k),
-  );
+  assert.deepEqual(before.pairCount, g.pairs.length);
   for (let k = 0; k < g.pairs.length; k++) {
     const pair = g.pairs[k],
       h = g.hero[pair.i].cards,
@@ -115,17 +118,78 @@ test("coverage reuses board sets across histories without losing private-card re
           : [k],
       );
       const covered = context.coverage(board);
-      assert.deepEqual(covered.pairIndices, expected);
+      assert.equal(covered.pairCount, expected.length);
       assert.strictEqual(covered, context.coverage([...g.board, b, a]));
       for (let player = 0; player < 2; player++)
         assert.deepEqual(
-          [...covered.actors[player]],
-          [
-            ...new Set(
-              expected.map((k) => (player ? g.pairs[k].j : g.pairs[k].i)),
-            ),
-          ],
+          covered.actors[player],
+          new Set(expected.map((k) => (player ? g.pairs[k].j : g.pairs[k].i))),
         );
     }
   }
+});
+
+test("blocker counts match exhaustive pairs with identical, dead and board-blocked hands", () => {
+  const ranges = [
+    parsePreflopRange("AA,AKs,AQs,KK,QJs,76s"),
+    parsePreflopRange("AA,AKs,QQ,QJs,77"),
+  ];
+  const flop = cards("7c6d2h");
+  for (let turn = 0; turn < 52; turn++) {
+    if (flop.includes(turn)) continue;
+    for (let river = turn + 1; river < 52; river++) {
+      if (flop.includes(river)) continue;
+      const board = [...flop, turn, river],
+        actors = [new Set(), new Set()];
+      let pairCount = 0;
+      ranges[0].forEach((h, i) =>
+        ranges[1].forEach((v, j) => {
+          if (new Set([...board, ...h.cards, ...v.cards]).size !== 9) return;
+          pairCount++;
+          actors[0].add(i);
+          actors[1].add(j);
+        }),
+      );
+      assert.deepEqual(rangeBoardCoverage(ranges, board), {
+        pairCount,
+        actors,
+      });
+    }
+  }
+  const dead = rangeBoardCoverage(
+    [parsePreflopRange("AhKh,AcKc"), parsePreflopRange("AhKh")],
+    flop,
+  );
+  assert.equal(dead.pairCount, 1);
+  assert.deepEqual(dead.actors, [new Set([1]), new Set([0])]);
+  assert.equal(
+    rangeBoardCoverage(
+      [parsePreflopRange("AhKh"), parsePreflopRange("KhAh")],
+      flop,
+    ).pairCount,
+    0,
+  );
+});
+
+test("complete starting ranges obey closed-form deal counts without constructing pair lists", () => {
+  const all = parsePreflopRange(RANGE_TEMPLATES[0].range),
+    flop = cards("7c6d2h");
+  const choose2 = (n) => (n * (n - 1)) / 2;
+  for (const board of [flop, [...flop, 0], [...flop, 0, 1]]) {
+    const remaining = 52 - board.length;
+    const covered = rangeBoardCoverage([all, all], board);
+    assert.equal(
+      covered.pairCount,
+      choose2(remaining) * choose2(remaining - 2),
+    );
+    assert.deepEqual(
+      covered.actors.map((s) => s.size),
+      [choose2(remaining), choose2(remaining)],
+    );
+  }
+  const expected = [choose2(49), 49 * choose2(48), 49 * 48 * choose2(47)];
+  assert.deepEqual(
+    fullBoardCoverage({ hero: all, villain: all, board: flop }),
+    { boards: [1, 49, 49 * 48], rows: [expected, expected] },
+  );
 });
