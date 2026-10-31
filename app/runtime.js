@@ -3,15 +3,26 @@ export async function engineInfo() {
     ? window.desktopSolver.available()
     : fetch("/api/engine").then((r) => r.json());
 }
-export async function nativeSolve(s, signal) {
+export async function nativeSolve(s, signal, options = {}) {
   if (window.desktopSolver) {
     const id = crypto.randomUUID(),
-      cancel = () => window.desktopSolver.cancel(id).catch(() => {});
+      cancel = () => window.desktopSolver.cancel(id).catch(() => {}),
+      pause = () => window.desktopSolver.pause(id).catch(() => {}),
+      unsubscribe = window.desktopSolver.onProgress?.((job, progress) => {
+        if (job === id) options.onProgress?.(progress);
+      });
     signal.addEventListener("abort", cancel, { once: true });
+    options.pauseSignal?.addEventListener("abort", pause, { once: true });
     try {
-      return await window.desktopSolver.solve(s, id);
+      signal.throwIfAborted();
+      return await window.desktopSolver.solve(s, id, {
+        checkpoint: !!options.checkpoint,
+        resume: !!options.resume,
+      });
     } finally {
       signal.removeEventListener("abort", cancel);
+      options.pauseSignal?.removeEventListener("abort", pause);
+      unsubscribe?.();
     }
   }
   const response = await fetch("/api/solve", {

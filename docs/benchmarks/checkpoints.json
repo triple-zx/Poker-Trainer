@@ -1,0 +1,845 @@
+{
+  "schema": 1,
+  "platform": "win32",
+  "arch": "x64",
+  "scenario": {
+    "name": "Ace-high · short stack lab",
+    "flop": "As 7d 2c",
+    "hero": "AhKh",
+    "villain": "QcQd",
+    "pot": 4,
+    "stack": 3,
+    "rake": 0,
+    "cap": 0,
+    "tendency": 0,
+    "overrides": {},
+    "deviation": 1,
+    "iterations": 240,
+    "game": "full",
+    "betting": {
+      "flop": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      },
+      "turn": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      },
+      "river": {
+        "bet": [
+          50
+        ],
+        "raise": [
+          100
+        ]
+      }
+    }
+  },
+  "iterations": 240,
+  "exactPolicyEquality": true,
+  "checkpointBytes": 2675589,
+  "verifiedNodes": 114636,
+  "gap": 0.000013734158077483016,
+  "runs": [
+    {
+      "label": "continuous",
+      "code": 0,
+      "wallMs": 57611.7007,
+      "progress": []
+    },
+    {
+      "label": "pause",
+      "code": 75,
+      "wallMs": 16463.7797,
+      "progress": [
+        {
+          "iteration": 0,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 10,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 20,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 29,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 33,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 38,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 40,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 45,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 50,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 55,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 60,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 64,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 69,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 74,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 78,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 80,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 81,
+          "saved": 81,
+          "status": "paused",
+          "target": 240
+        }
+      ]
+    },
+    {
+      "label": "resume",
+      "code": 0,
+      "wallMs": 37744.220700000005,
+      "progress": [
+        {
+          "iteration": 81,
+          "saved": 81,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 90,
+          "saved": 81,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 100,
+          "saved": 81,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 109,
+          "saved": 81,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 113,
+          "saved": 81,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 118,
+          "saved": 81,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 120,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 125,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 129,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 134,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 139,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 143,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 147,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 152,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 157,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 160,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 164,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 169,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 174,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 178,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 181,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 185,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 190,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 195,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 199,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 200,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 204,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 209,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 214,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 218,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 222,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 227,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 232,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 237,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 240,
+          "saved": 240,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 240,
+          "saved": 240,
+          "status": "complete",
+          "target": 240
+        }
+      ]
+    },
+    {
+      "label": "kill",
+      "code": null,
+      "wallMs": 15863.339900000006,
+      "progress": [
+        {
+          "iteration": 0,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 10,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 20,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 29,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 33,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 37,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 40,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 45,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 50,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 54,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 59,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 64,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 69,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 73,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 78,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 80,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        }
+      ]
+    },
+    {
+      "label": "recover",
+      "code": 0,
+      "wallMs": 37789.0046,
+      "progress": [
+        {
+          "iteration": 80,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 80,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 90,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 100,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 108,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 113,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 118,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 120,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 125,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 130,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 135,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 139,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 143,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 147,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 152,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 156,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 160,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 164,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 168,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 173,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 178,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 183,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 187,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 192,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 197,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 200,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 203,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 208,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 213,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 218,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 222,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 226,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 231,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 236,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 240,
+          "saved": 240,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 240,
+          "saved": 240,
+          "status": "complete",
+          "target": 240
+        }
+      ]
+    },
+    {
+      "label": "wrong-key",
+      "code": 3,
+      "wallMs": 43.18530000001192,
+      "progress": []
+    },
+    {
+      "label": "different-range",
+      "code": 3,
+      "wallMs": 35.9315999999817,
+      "progress": []
+    },
+    {
+      "label": "different-tree",
+      "code": 3,
+      "wallMs": 34.897200000006706,
+      "progress": []
+    },
+    {
+      "label": "smaller-budget",
+      "code": 3,
+      "wallMs": 36.01809999998659,
+      "progress": []
+    },
+    {
+      "label": "corrupt",
+      "code": 3,
+      "wallMs": 56.01840000000084,
+      "progress": []
+    },
+    {
+      "label": "truncated",
+      "code": 3,
+      "wallMs": 55.686100000020815,
+      "progress": []
+    },
+    {
+      "label": "mixed-ip-continuous",
+      "code": 0,
+      "wallMs": 8096.970499999996,
+      "progress": []
+    },
+    {
+      "label": "mixed-ip-pause",
+      "code": 75,
+      "wallMs": 1724.81289999999,
+      "progress": [
+        {
+          "iteration": 0,
+          "saved": 0,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 40,
+          "saved": 40,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 80,
+          "saved": 80,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 81,
+          "saved": 81,
+          "status": "paused",
+          "target": 240
+        }
+      ]
+    },
+    {
+      "label": "mixed-ip-resume",
+      "code": 0,
+      "wallMs": 4044.9489000000176,
+      "progress": [
+        {
+          "iteration": 81,
+          "saved": 81,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 120,
+          "saved": 120,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 160,
+          "saved": 160,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 200,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 234,
+          "saved": 200,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 240,
+          "saved": 240,
+          "status": "running",
+          "target": 240
+        },
+        {
+          "iteration": 240,
+          "saved": 240,
+          "status": "complete",
+          "target": 240
+        }
+      ]
+    }
+  ],
+  "mixedInPosition": {
+    "exactPolicyEquality": true,
+    "hero": "AhKh:.75,9h8h:.5",
+    "villain": "QcQd:.6,JhTh:.4",
+    "pausedAt": 81
+  }
+}

@@ -2,7 +2,7 @@
 
 A local postflop training and research app. English and Chinese interface. No account, cloud database, telemetry, or GPU required.
 
-Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions, automatic full-hand sizing, opponent tendencies and detailed edits, in-position play, conditional range analysis and saved-flop comparisons for the next release; use the developer setup below to run those changes now.
+Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions, automatic full-hand sizing, opponent tendencies and detailed edits, in-position play, conditional range analysis, saved-flop comparisons, range editing and resumable native solving for the next release; use the developer setup below to run those changes now.
 
 ## Desktop application
 
@@ -75,7 +75,7 @@ This is an engineering milestone, **not completion of the entire requirements ba
 1. Configure the flop and exact ranges, e.g. `AhKh:1,QhQd:0.5`.
 2. Set calling tendency: 0 preserves baseline, +1 always calls, −1 always folds. JSON overrides such as `{"AcQc":0.8}` take precedence for that combination.
 3. Choose all-in only, fast candidate sizing, or deep finite midpoint search. Set the maximum retained sizes and target simplification loss. Optional node overrides such as `{"AcQc@3.3":0.8}` apply only when facing that bet.
-4. Precompute. The native engine runs locally when installed. Pause saves completed equity hand pairs; resuming a canceled native baseline restarts that stage.
+4. Precompute. The updated desktop engine saves native iteration checkpoints every 100 iterations. **Pause** finishes the current iteration, saves it and releases the solver process; **Resume checkpoint** continues from that state. **Restore saved solver job** recovers its settings after reopening the app. Starting a new computation replaces the single saved native job. Completed native work can be reloaded without repeating iterations; subsequent decision evaluation restarts if interrupted. The optional browser preview and older engines still stop/restart their native baseline. Reference equity enumeration saves completed hand pairs.
 5. Train. Opponent cards and action values appear after the decision. Scores use expected-value loss, not the luck of the sampled outcome.
 6. Review and bookmark hands. Export a scenario before clearing browser storage.
 

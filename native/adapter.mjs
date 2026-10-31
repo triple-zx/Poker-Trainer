@@ -17,6 +17,7 @@ import { validateFull } from "../app/full-game.js";
 import { fullCandidates } from "../app/full-sizing.js";
 import { firstPlayer } from "../app/positions.js";
 import { assertFullCapacity } from "../app/full-resources.js";
+import { prepareCheckpoint, progressReader } from "./checkpoint-job.mjs";
 const bundled = fileURLToPath(
   new URL("../.native/TexasSolver/", import.meta.url),
 );
@@ -41,6 +42,24 @@ export async function available() {
   } catch {
     return false;
   }
+}
+export async function checkpointSupported() {
+  return new Promise((resolve) => {
+    const child = spawn(binary, ["--trainer-capabilities"], {
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    let output = "";
+    const timeout = setTimeout(() => child.kill(), 5000);
+    child.stdout.on("data", (chunk) => {
+      output = (output + chunk).slice(-1000);
+    });
+    child.on("error", () => {});
+    child.on("close", (code) => {
+      clearTimeout(timeout);
+      resolve(code === 0 && output.trim() === '{"checkpoint":1}');
+    });
+  });
 }
 export function commands(s) {
   const g = validate(s);
@@ -92,7 +111,7 @@ export function commands(s) {
     "build_tree",
     `set_thread_num ${Math.min(4, os.availableParallelism(), Math.max(1, Number(process.env.TEXASSOLVER_THREADS) || 1))}`,
     `set_accuracy ${s.game === "full" ? 0.05 / s.pot : 0.001}`,
-    `set_max_iteration ${Math.min(s.iterations, 10000)}`,
+    `set_max_iteration ${s.iterations}`,
     "set_print_interval 100",
     "set_use_isomorphism 0",
     "start_solve",
@@ -187,27 +206,70 @@ export function extractSized(data, s) {
     engine: "TexasSolver (patched console)",
   };
 }
-export async function run(s, signal) {
+export async function run(s, signal, options = {}) {
   if (s.game === "full") assertFullCapacity(s);
   const input = commands(s);
   if (!(await available()))
     throw Error("Native solver is not installed. See native/README.md.");
+  signal?.throwIfAborted();
+  if (options.checkpointDirectory && !(await checkpointSupported()))
+    throw Error(
+      "This native engine does not support checkpoints. Rebuild it with native/setup.mjs.",
+    );
+  const checkpoint = options.checkpointDirectory
+    ? await prepareCheckpoint(
+        path.resolve(options.checkpointDirectory),
+        input,
+        await readFile(binary),
+        s,
+        !!options.resume,
+      )
+    : null;
   const directory = await mkdtemp(path.join(os.tmpdir(), "poker-solve-"));
   const start = performance.now();
   try {
     await writeFile(path.join(directory, "input.txt"), input);
-    let output = "";
-    await new Promise((resolve, reject) => {
+    let output = "",
+      progress = null;
+    const code = await new Promise((resolve, reject) => {
+      let failure = null;
       const child = spawn(binary, ["-i", "input.txt", "-r", resources], {
         cwd: directory,
         windowsHide: true,
         stdio: ["ignore", "pipe", "pipe"],
-        signal,
+        env: {
+          ...process.env,
+          // Host callers opt in explicitly; inherited shell settings cannot
+          // silently attach a normal solve to somebody else's checkpoint.
+          POKER_CHECKPOINT_FILE: "",
+          POKER_PAUSE_FILE: "",
+          ...checkpoint?.environment,
+        },
+      });
+      const fail = (error) => {
+        failure ||= error;
+        child.kill();
+      };
+      const cancel = () =>
+        fail(
+          Error(
+            checkpoint
+              ? "Native solve cancelled; last completed checkpoint retained"
+              : "Native solve cancelled",
+          ),
+        );
+      const pause = () => checkpoint?.pause().catch(fail);
+      signal?.addEventListener("abort", cancel, { once: true });
+      options.pauseSignal?.addEventListener("abort", pause, { once: true });
+      if (signal?.aborted) cancel();
+      if (options.pauseSignal?.aborted) pause();
+      const readProgress = progressReader((value) => {
+        progress = value;
+        options.onProgress?.(value);
       });
       const timeout = setTimeout(
         () => {
-          child.kill();
-          reject(
+          fail(
             Error(
               s.game === "full"
                 ? "Native solve exceeded the 30-minute limit. Reduce ranges, sizes or iterations."
@@ -219,21 +281,45 @@ export async function run(s, signal) {
       );
       child.stdout.on("data", (b) => {
         output = (output + b.toString()).slice(-10000);
+        try {
+          readProgress(b);
+        } catch (error) {
+          fail(error);
+        }
       });
       child.stderr.on("data", (b) => {
         output = (output + b.toString()).slice(-10000);
       });
       child.on("error", (e) => {
-        clearTimeout(timeout);
-        reject(e);
+        failure ||= e;
       });
       child.on("close", (code) => {
         clearTimeout(timeout);
-        code === 0
-          ? resolve()
-          : reject(Error("Native solver failed with exit code " + code));
+        signal?.removeEventListener("abort", cancel);
+        options.pauseSignal?.removeEventListener("abort", pause);
+        if (failure) reject(failure);
+        else if (
+          code === 0 ||
+          (code === 75 && checkpoint && progress?.status === "paused")
+        )
+          resolve(code);
+        else
+          reject(
+            Error(
+              "Native solver failed with exit code " +
+                code +
+                ": " +
+                output.slice(-1200),
+            ),
+          );
       });
     });
+    if (code === 75)
+      return { paused: true, progress, wallMs: performance.now() - start };
+    if (checkpoint && progress?.status !== "complete")
+      throw Error(
+        "This native engine does not support checkpoints. Rebuild it with native/setup.mjs.",
+      );
     if (
       (await stat(path.join(directory, "result.json"))).size >
       256 * 1024 * 1024
@@ -244,6 +330,7 @@ export async function run(s, signal) {
     );
     return {
       ...extract(data, s),
+      ...(progress ? { progress } : {}),
       wallMs: performance.now() - start,
       reportedPercent: Number(
         [...output.matchAll(/Total exploitability ([\d.eE+-]+)/g)].at(-1)?.[1],

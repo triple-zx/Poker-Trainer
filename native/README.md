@@ -4,7 +4,7 @@ The trainer runs a separately built CPU console executable. It does not bundle u
 
 ## Build
 
-Prerequisites: Git, CMake, C++17 compiler and OpenMP. Windows build tested with MinGW GCC 8.1.0 and CMake 3.26. macOS requires a compiler/OpenMP installation; native macOS execution has not yet been tested.
+Prerequisites: Git, CMake, C++17 compiler and OpenMP. Windows build tested with MinGW GCC 8.1.0 and CMake 3.26. macOS requires a compiler/OpenMP installation; the new checkpoint support still needs macOS validation.
 
 ```sh
 node native/setup.mjs
@@ -42,6 +42,16 @@ The verifier measures the sum of both players' unilateral improvement incentives
 For zero rake, the native reported percent is half of this gap divided by pot, multiplied by 100. Compare units explicitly. The initial pre-patch result reported `0.00006914139%`, while independent gap was `0.007079991 bb`. After the chance normalization patch, native reported `0.004044175%` and independent gap was `0.000809673 bb` at the same 10 bb pot, which agree to floating-point tolerance. The included verifier requires gap below 0.001 bb for this fixture.
 
 The bounded adapter requests 0.001% native accuracy; full-hand mode requests `0.05 / pot` percent, corresponding to a 0.001 bb Nash gap. Maximum iterations may stop before the requested accuracy. The independently measured gap is displayed regardless. Small fixed-tree gap does not establish optimal bet sizing or robustness of an opponent model.
+
+## Iteration checkpoints
+
+The updated desktop engine supports `--trainer-capabilities` and reports checkpoint protocol 1. `Checkpoint.cpp`, compiled by this repository's CMake recipe, persists DCFR regrets, cached positive-regret sums, accumulated strategy, slot presence, the absolute iteration number and the convergence flag. Saving occurs after both players' updates and the iteration's scheduled accuracy check. Thus pausing exactly when the accuracy target is met does not change early-stopping behavior. A converged checkpoint exports directly; a budget-limited checkpoint can continue with a larger budget. The adapter now honors the configured 100–100,000 iteration range rather than silently clipping it to 10,000.
+
+The adapter's `run(scenario, abortSignal, options)` accepts a host-owned `checkpointDirectory`, `resume`, `pauseSignal` and `onProgress`. The desktop owns a single `solver-job` folder under its user-data directory; renderer input cannot select filesystem paths. Fresh computation replaces that job. Pause writes a request file, waits for the next complete iteration, atomically saves state and exits with code 75, without exporting a partial result. Progress reports the current completed iteration and separately the last saved iteration. Periodic saves occur every 100 iterations; an unexpected app/process exit may lose the iterations since that save. Normal cancellation and timeout wait for process exit before deleting temporary output files. No GitHub Actions run is involved.
+
+Checkpoints bind to the exact executable and native commands, excluding only the maximum iteration budget. Native loading also compares board, exact weighted ranges, deck, algorithm settings and every tree node/action/payoff. It uses expected sizes from the rebuilt tree, rejects nonfinite state and checks the entire stream's checksum and length. Writes flush a temporary file before atomic replacement; incomplete temporary files are never resumed. This is corruption detection for local files, not cryptographic authentication or a promise of recovery from hardware failure. Solver upgrades or different game settings require a fresh solve. Checkpoints are not portable solution packages and contain no training journal. Sampling, warmup and suit isomorphism are unsupported by this checkpoint format.
+
+Run `node native/verify-checkpoints.mjs` with the new native engine to compare every exported probability across uninterrupted, paused/resumed and forcibly interrupted/recovered full-tree runs, test mismatched/corrupt/truncated files, and verify weighted in-position ranges. Run `node node_modules/electron/cli.js . --smoke-test --checkpoint-smoke` for the isolated desktop controls, renderer reload, saved-job restoration and resumed decision evaluation. The existing app window and user data are not used by this smoke test. Rebuild with `native/setup.mjs` before using the new native feature; older engines are detected and keep their explicitly labeled stop/restart behavior.
 
 ## Direct evaluator and measured efficiency
 
