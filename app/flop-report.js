@@ -53,6 +53,7 @@ export function flopGroupSettings(s) {
     // The basis binds detailed edits to their board/tree. They are not assumed
     // to mean the same opponent on another flop, even if the edit counts match.
     fullModel: s.fullModel || null,
+    rangeOrigins: s.rangeOrigins || null,
   };
 }
 

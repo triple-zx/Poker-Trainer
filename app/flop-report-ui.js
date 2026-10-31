@@ -2,6 +2,7 @@ import { cardName } from "./engine.js";
 import { CATEGORIES } from "./analytics.js";
 import { fullActionLabel } from "./full-game.js";
 import { tendencySummary } from "./tendency-ui.js";
+import { showRangeOrigins } from "./preflop-ranges-ui.js";
 
 const el = (tag, text, parent) => {
   const node = document.createElement(tag);
@@ -245,6 +246,7 @@ export function flopReportPanel(container, library, state, t) {
         ),
       ])
         if (text) el("p", text, assumptions);
+      showRangeOrigins(el("div", undefined, assumptions), s.rangeOrigins, t);
       const scroll = el("div", undefined, section);
       scroll.className = "scroll";
       const table = el("table", undefined, scroll),

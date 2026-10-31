@@ -1,0 +1,11 @@
+{
+  "nodes": 19890,
+  "combinations": 3,
+  "blocked": 1,
+  "schema": 5,
+  "gap": 5.512785214989435e-7,
+  "nativeWallMs": 2635.2383,
+  "hands": 100,
+  "decisions": 163,
+  "provenanceRoundTrip": true
+}

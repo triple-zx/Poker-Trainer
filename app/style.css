@@ -85,6 +85,7 @@ h2 {
   font-size: 13px;
 }
 nav {
+  flex-wrap: wrap;
   display: flex;
   gap: 10px;
   border-bottom: 1px solid #35443d;
@@ -130,6 +131,39 @@ nav .active {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
+}
+.range-editor-matrix {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(45px, 1fr));
+  min-width: 650px;
+  gap: 3px;
+  margin: 16px 0;
+}
+.range-editor-matrix button {
+  padding: 7px 2px;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 1.25;
+}
+.range-editor-matrix small {
+  display: block;
+  color: #becbbd;
+}
+.range-editor-matrix [aria-pressed="true"] {
+  outline: 2px solid #d6ed95;
+  outline-offset: -2px;
+}
+.range-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+#ranges > details,
+#range-origins details {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid #35443d;
+  border-radius: 6px;
 }
 article,
 .decision,

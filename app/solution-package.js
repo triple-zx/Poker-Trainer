@@ -1,4 +1,5 @@
-import { DEFAULT, importPackage } from "./engine.js";
+import { DEFAULT, importPackage, validate } from "./engine.js";
+import { validateRangeOrigins, rangeDocument } from "./preflop-ranges.js";
 import { convertFull, evaluateFull, validateFull } from "./full-game.js";
 import { modelBasis } from "./full-model.js";
 import { validateTendencies } from "./opponent-tendencies.js";
@@ -14,6 +15,7 @@ const scenarioFields = [
   "fullModel",
   "fullTendencies",
   "heroPosition",
+  "rangeOrigins",
 ];
 // Export only game settings and baseline policies. Journals, sampled cards,
 // cached EVs, and application/storage state never enter a shared package.
@@ -28,6 +30,14 @@ function scenarioCopy(s) {
   if (copy.game === "full") copy.engine = "native";
   if (copy.heroPosition === "oop") delete copy.heroPosition;
   validateTendencies(copy);
+  validateRangeOrigins(copy);
+  if (copy.rangeOrigins)
+    copy.rangeOrigins = Object.fromEntries(
+      Object.entries(copy.rangeOrigins).map(([side, doc]) => [
+        side,
+        rangeDocument(doc),
+      ]),
+    );
   return copy;
 }
 export function sameScenario(a, b) {
@@ -45,7 +55,8 @@ export function sameScenario(a, b) {
   return canonical(a) === canonical(b);
 }
 const needsV3 = (s) => s.heroPosition === "ip" || !!s.fullModel;
-const modelVersion = (s) => (s.fullTendencies ? 4 : needsV3(s) ? 3 : null);
+const modelVersion = (s) =>
+  s.rangeOrigins ? 5 : s.fullTendencies ? 4 : needsV3(s) ? 3 : null;
 export function scenarioPackage(s, equities) {
   const scenario = scenarioCopy(s);
   if (scenario.game === "full") validateFull(scenario);
@@ -94,9 +105,13 @@ export function solutionPackage(result) {
   };
 }
 export function restorePackage(data) {
-  if ([3, 4].includes(data?.schema) && data.type === "poker-trainer-scenario") {
+  if (
+    [3, 4, 5].includes(data?.schema) &&
+    data.type === "poker-trainer-scenario"
+  ) {
     const scenario = scenarioCopy(data.scenario);
-    validateFull(scenario);
+    validate(scenario);
+    if (scenario.game === "full") validateFull(scenario);
     return { scenario, result: null };
   }
   if (data?.schema === 1) {
@@ -106,7 +121,7 @@ export function restorePackage(data) {
     return { scenario, result: null };
   }
   if (
-    ![2, 3, 4].includes(data?.schema) ||
+    ![2, 3, 4, 5].includes(data?.schema) ||
     data.type !== "poker-trainer-solution" ||
     !data.scenario
   )

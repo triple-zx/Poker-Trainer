@@ -15,6 +15,7 @@ import {
 } from "./tendency-ui.js";
 import { solutionStore } from "./solution-store.js";
 import { flopReportPanel } from "./flop-report-ui.js";
+import { rangeWorkspace, showRangeOrigins } from "./preflop-ranges-ui.js";
 import {
   sameScenario,
   scenarioPackage,
@@ -66,10 +67,39 @@ let fullTraining = null;
 let packageJob = null;
 let fullModel = null,
   cachedBaseline = null;
+let rangeOrigins = null;
 let explorerPath = "root";
 const t = (en, zh) => (lang === "en" ? en : zh);
 const msg = (en, zh = en) => ($("#status").textContent = t(en, zh));
 renderTendencyClasses($("#tendency-classes"), t);
+const ranges = rangeWorkspace($("#ranges"), {
+  t,
+  download,
+  scenario: () => ({
+    flop: form.elements.flop.value,
+    game: form.elements.game.value,
+  }),
+  onApply: (side, applied) => {
+    if (hand)
+      throw Error(
+        t(
+          "Finish the hand before changing ranges.",
+          "请先完成本手再修改范围。",
+        ),
+      );
+    form.elements[side].value = applied.text;
+    fullModel = null;
+    if (side === "villain") {
+      form.elements.overrides.value = "{}";
+      form.elements.nodeOverrides.value = "{}";
+    }
+    form.elements[side].dispatchEvent(new Event("input", { bubbles: true }));
+    rangeOrigins = { ...rangeOrigins, [side]: applied.document };
+    showRangeOrigins($("#range-origins"), rangeOrigins, t);
+    updateCandidatePreview();
+    save();
+  },
+});
 function read() {
   const fd = new FormData(form),
     s = Object.fromEntries(fd);
@@ -135,12 +165,14 @@ function read() {
     delete s[street + "Bets"];
     delete s[street + "Raises"];
   }
+  if (rangeOrigins) s.rangeOrigins = structuredClone(rangeOrigins);
   validate(s);
   if (s.game === "full") validateFull(s);
   betAmounts(s);
   return s;
 }
 function fill(s) {
+  rangeOrigins = s.rangeOrigins ? structuredClone(s.rangeOrigins) : null;
   fillTendencies(form, s);
   fullModel = s.fullModel ? structuredClone(s.fullModel) : null;
   const iterations = form.elements.iterations;
@@ -185,6 +217,7 @@ function fill(s) {
   updateCandidatePreview();
 }
 function formatControls() {
+  showRangeOrigins($("#range-origins"), rangeOrigins, t);
   const full = form.elements.game.value === "full";
   $("#opponent-tendencies").hidden = !full;
   $("#opponent-tendencies").disabled = !full;
@@ -251,9 +284,13 @@ function show(tab) {
     hand &&
     (tab === "analysis" ||
       tab === "history" ||
+      tab === "ranges" ||
       (fullTraining && tab === "setup"))
   ) {
-    msg("Finish the hand before opening analysis.", "请先完成本手再查看分析。");
+    msg(
+      "Finish the hand before opening this view.",
+      "请先完成本手再打开此页面。",
+    );
     return;
   }
   document.querySelectorAll(".pane").forEach((p) => (p.hidden = p.id !== tab));
@@ -263,11 +300,14 @@ function show(tab) {
     .forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   if (tab === "analysis") analysis();
   if (tab === "history") history();
+  if (tab === "ranges") ranges.render();
 }
 document
   .querySelectorAll("[data-tab]")
   .forEach((b) => (b.onclick = () => show(b.dataset.tab)));
 function translate() {
+  ranges.render();
+  showRangeOrigins($("#range-origins"), rangeOrigins, t);
   renderTendencyClasses($("#tendency-classes"), t);
   if (result) reportStatus();
   document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
@@ -452,6 +492,13 @@ $("#resume").onclick = () => {
 };
 form.addEventListener("input", (e) => {
   if (e.target.id === "import") return;
+  if (rangeOrigins && ["hero", "villain", "flop"].includes(e.target.name)) {
+    if (e.target.name === "flop") rangeOrigins = null;
+    else {
+      delete rangeOrigins[e.target.name];
+      if (!Object.keys(rangeOrigins).length) rangeOrigins = null;
+    }
+  }
   formatControls();
   fullTraining?.cancel();
   fullTraining = null;
