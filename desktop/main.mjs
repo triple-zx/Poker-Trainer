@@ -276,6 +276,13 @@ else {
             );
             expandedRangeUI = await expandedRangeSmoke(contents, root);
           }
+          let trainingLanguageUI = null;
+          if (process.argv.includes("--training-language-smoke")) {
+            const { trainingLanguageSmoke } = await import(
+              "./training-language-smoke.mjs"
+            );
+            trainingLanguageUI = await trainingLanguageSmoke(contents, root);
+          }
           console.log(
             JSON.stringify({
               desktopLoaded: ready,
@@ -285,6 +292,7 @@ else {
               flopReportWorker,
               ...(checkpointUI ? { checkpointUI } : {}),
               ...(expandedRangeUI ? { expandedRangeUI } : {}),
+              ...(trainingLanguageUI ? { trainingLanguageUI } : {}),
               url: contents.getURL(),
             }),
           );
