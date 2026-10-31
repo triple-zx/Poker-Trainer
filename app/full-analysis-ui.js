@@ -1,3 +1,4 @@
+import { matrixRow, matrixValue } from "./full-matrix.js";
 import { fullActionLabel, streetName } from "./full-game.js";
 import { cardName, validate } from "./engine.js";
 import { fullCandidates } from "./full-sizing.js";
@@ -261,23 +262,29 @@ export function fullExplorer(
     table.append(thead);
     const tbody = document.createElement("tbody");
     (node.player === 0 ? g.hero : g.villain).forEach((h, i) => {
-      if (!node.policy[i]) return;
+      if (!matrixRow(node.policy, i)) return;
       node.actions.forEach((a, j) => {
         const row = document.createElement("tr");
-        const adjusted = (node.player === 0 ? node.adjusted : node.model)?.[i];
+        const adjusted = matrixRow(
+          node.player === 0 ? node.adjusted : node.model,
+          i,
+        );
         for (const text of [
           h.label,
           fullActionLabel(a, node, result.scenario, t),
-          (100 * node.policy[i][j]).toFixed(1) + "%",
+          (100 * matrixValue(node.policy, i, j)).toFixed(1) + "%",
           adjusted
             ? (100 * adjusted[j]).toFixed(1) + "%"
             : t("No model reach", "模型未到达"),
           ...(node.player === 0
-            ? [node.ev[i]?.[j]?.toFixed(4) ?? t("No model reach", "模型未到达")]
+            ? [
+                matrixValue(node.ev, i, j)?.toFixed(4) ??
+                  t("No model reach", "模型未到达"),
+              ]
             : []),
           ...(node.sizingEV
             ? [
-                node.sizingEV[i]?.[j]?.toFixed(4) ??
+                matrixValue(node.sizingEV, i, j)?.toFixed(4) ??
                   t("No model reach", "模型未到达"),
               ]
             : []),
@@ -310,7 +317,7 @@ export function fullExplorer(
         combo = document.createElement("select");
       comboLabel.textContent = t("Opponent combination", "对手手牌组合");
       g.villain.forEach((h, i) => {
-        if (!node.policy[i]) return;
+        if (!matrixRow(node.policy, i)) return;
         const option = document.createElement("option");
         option.value = i;
         option.textContent = h.label;
@@ -329,7 +336,7 @@ export function fullExplorer(
       function populate() {
         fields.replaceChildren();
         const index = Number(combo.value),
-          row = node.model?.[index] || node.policy[index];
+          row = matrixRow(node.model, index) || matrixRow(node.policy, index);
         const percentages = row.map((p) => Math.round(p * 100000000) / 1000000);
         const largest = row.indexOf(Math.max(...row));
         percentages[largest] += 100 - percentages.reduce((a, b) => a + b, 0);

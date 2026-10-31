@@ -4,6 +4,7 @@ import {
   restorePackage,
   remodelSolution,
 } from "./solution-package.js";
+import { matrixTransfers } from "./full-matrix.js";
 self.onmessage = async ({ data }) => {
   try {
     if (data.type === "export") {
@@ -16,10 +17,14 @@ self.onmessage = async ({ data }) => {
         );
       self.postMessage({ type: "exported", blob });
     } else if (data.type === "remodel") {
-      self.postMessage({
-        type: "imported",
-        ...remodelSolution(data.result, data.scenario),
-      });
+      const restored = remodelSolution(data.result, data.scenario);
+      self.postMessage(
+        {
+          type: "imported",
+          ...restored,
+        },
+        matrixTransfers(restored.result?.root),
+      );
     } else if (data.type === "import") {
       if (!data.file || data.file.size > PACKAGE_LIMIT)
         throw Error("Package exceeds 128 MiB");
@@ -29,7 +34,11 @@ self.onmessage = async ({ data }) => {
         data.file.size > 1000000
       )
         throw Error("Scenario package exceeds 1 MB");
-      self.postMessage({ type: "imported", ...restorePackage(parsed) });
+      const restored = restorePackage(parsed);
+      self.postMessage(
+        { type: "imported", ...restored },
+        matrixTransfers(restored.result?.root),
+      );
     } else throw Error("Unsupported package operation");
   } catch (e) {
     self.postMessage({ type: "error", message: e.message });

@@ -1,6 +1,7 @@
 import { validate, sample, rank7 } from "./engine.js";
 import { fullActionLabel, streetName } from "./full-game.js";
 import { nodeReach } from "./full-node-analysis.js";
+import { matrixRow } from "./full-matrix.js";
 
 export function drillContext(result, drill) {
   const context = nodeReach(result, drill.path, drill.profile);
@@ -11,8 +12,8 @@ export function drillContext(result, drill) {
       "This history has zero probability under the selected range profile",
     );
   for (const { i } of context.game.pairs) {
-    const ev = context.node.ev?.[i],
-      target = context.node.adjusted?.[i];
+    const ev = matrixRow(context.node.ev, i),
+      target = matrixRow(context.node.adjusted, i);
     if (
       !ev ||
       ev.length !== context.node.actions.length ||
@@ -89,7 +90,7 @@ export class FullSession {
     const action = node.actions[a],
       label = fullActionLabel(action, node, this.result.scenario);
     if (node.player === 0) {
-      const ev = node.ev[this.deal.i];
+      const ev = matrixRow(node.ev, this.deal.i);
       if (!ev) throw Error("This decision has no evaluated opponent reach");
       this.decisions.push({
         path: this.events.map((e) => e.text),
@@ -102,7 +103,7 @@ export class FullSession {
         ),
         ev: [...ev],
         loss: Math.max(...ev) - ev[a],
-        target: node.adjusted[this.deal.i],
+        target: [...matrixRow(node.adjusted, this.deal.i)],
         retained: node.activeActions ? [...node.activeActions] : null,
       });
     }
@@ -119,7 +120,7 @@ export class FullSession {
     const node = this.node;
     if (node.type === "action") {
       if (node.player === 0) return null;
-      const policy = (node.model || node.policy)[this.deal.j];
+      const policy = matrixRow(node.model || node.policy, this.deal.j);
       let draw = this.rng(),
         a = policy.length - 1;
       for (let i = 0; i < policy.length; i++) {

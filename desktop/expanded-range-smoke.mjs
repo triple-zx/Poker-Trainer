@@ -44,6 +44,11 @@ export async function expandedRangeSmoke(contents, root, broad = false) {
   await contents.executeJavaScript(
     "document.querySelector('#language').click()",
   );
+  let compact = null;
+  if (broad) {
+    const { compactStudySmoke } = await import("./compact-study-smoke.mjs");
+    compact = await compactStudySmoke(contents);
+  }
   await new Promise((resolve) => setTimeout(resolve, 250));
   const image = await contents.capturePage();
   await writeFile(
@@ -55,6 +60,8 @@ export async function expandedRangeSmoke(contents, root, broad = false) {
     image.toPNG(),
   );
   const refused = await contents.executeJavaScript(`(() => {
+    document.querySelector('[data-tab=setup]').click();
+    document.querySelector('#clear-model').click();
     const form=document.querySelector('#form');
     form.elements.stack.value='3';
     for(const street of ['flop','turn','river']) form.elements[street+'Bets'].value='33,50';
@@ -63,5 +70,10 @@ export async function expandedRangeSmoke(contents, root, broad = false) {
     return document.querySelector('#status').textContent;
   })()`);
   assert.match(refused, /2,400,000-probability capacity/);
-  return { ...imported, chineseCapacity: chinese, probabilityCapacity: true };
+  return {
+    ...imported,
+    chineseCapacity: chinese,
+    probabilityCapacity: true,
+    ...(compact ? { compact } : {}),
+  };
 }

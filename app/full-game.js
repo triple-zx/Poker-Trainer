@@ -4,6 +4,12 @@ import { firstPlayer } from "./positions.js";
 import { validateTendencies, opponentPolicy } from "./opponent-tendencies.js";
 import { fullCardContext } from "./full-cards.js";
 import { fullReachContext } from "./full-reach.js";
+import {
+  packMatrix,
+  mapMatrix,
+  matrixRow,
+  createMatrixArena,
+} from "./full-matrix.js";
 import { FULL_POLICY_VALUE_LIMIT } from "./limits.js";
 import {
   validateFullSizing,
@@ -203,7 +209,8 @@ export function convertFull(raw, s, { portable = false } = {}) {
   const g = validateFull(s),
     ranges = [g.hero, g.villain],
     betting = fullCandidates(s),
-    cardContext = fullCardContext(g);
+    cardContext = fullCardContext(g),
+    policyArena = createMatrixArena();
   let count = 0,
     policyValues = 0;
   function visit(data, state) {
@@ -326,7 +333,7 @@ export function convertFull(raw, s, { portable = false } = {}) {
       street: state.street,
       player: state.player,
       actions,
-      policy,
+      policy: packMatrix(policy, actions.length, policyArena),
       children,
     };
   }
@@ -369,20 +376,28 @@ export function evaluateFull(tree, s, { store = true } = {}) {
     ranges = [g.hero, g.villain],
     cardContext = fullCardContext(g),
     reachContext = fullReachContext(g, cardContext);
-  const modeled = new WeakSet();
+  const modeled = new WeakSet(),
+    modelArena = createMatrixArena();
   const locks = modelLocks(tree.root, s);
   const policies = (node, model) => {
     if (!model || node.player !== 1) return node.policy;
     if (modeled.has(node)) return node.model;
-    node.model = node.policy.map((v, i) => {
-      if (!v) return null;
-      if (locks.get(node)?.has(i)) return locks.get(node).get(i);
-      return opponentPolicy(s, node, g.villain[i], v);
-    });
+    node.model = mapMatrix(
+      node.policy,
+      node.actions.length,
+      (v, i) => {
+        if (!v) return null;
+        if (locks.get(node)?.has(i)) return locks.get(node).get(i);
+        return opponentPolicy(s, node, g.villain[i], v);
+      },
+      modelArena,
+    );
     modeled.add(node);
     return node.model;
   };
   function response(player, model, record, limits = null) {
+    const feedbackArena = createMatrixArena(),
+      adjustedArena = createMatrixArena();
     function walk(node, reach) {
       const values = Array(ranges[player].length).fill(0);
       if (node.type === "terminal") {
@@ -426,32 +441,38 @@ export function evaluateFull(tree, s, { store = true } = {}) {
       if (record) {
         if (limits) {
           node.activeActions = active;
-          node.sizingEV = ev;
+          node.sizingEV = packMatrix(ev, node.actions.length, feedbackArena);
         } else {
-          node.ev = ev;
+          node.ev = packMatrix(ev, node.actions.length, feedbackArena);
           delete node.activeActions;
           delete node.sizingEV;
         }
-        node.adjusted = ev.map((v, i) => {
-          if (!v) return null;
-          const best = Math.max(...active.map((a) => v[a])),
-            winners = active.filter((a) => Math.abs(v[a] - best) < 1e-8),
-            mass = active.reduce((sum, a) => sum + node.policy[i][a], 0),
-            baseline = node.policy[i].map((x, a) =>
-              active.includes(a) ? (mass ? x / mass : 1 / active.length) : 0,
-            ),
-            winnerMass = winners.reduce((sum, a) => sum + baseline[a], 0);
-          return v.map(
-            (_, a) =>
-              (1 - s.deviation) * baseline[a] +
-              s.deviation *
-                (winners.includes(a)
-                  ? winnerMass
-                    ? baseline[a] / winnerMass
-                    : 1 / winners.length
-                  : 0),
-          );
-        });
+        node.adjusted = mapMatrix(
+          ev,
+          node.actions.length,
+          (v, i) => {
+            if (!v) return null;
+            const policyRow = matrixRow(node.policy, i);
+            const best = Math.max(...active.map((a) => v[a])),
+              winners = active.filter((a) => Math.abs(v[a] - best) < 1e-8),
+              mass = active.reduce((sum, a) => sum + policyRow[a], 0),
+              baseline = policyRow.map((x, a) =>
+                active.includes(a) ? (mass ? x / mass : 1 / active.length) : 0,
+              ),
+              winnerMass = winners.reduce((sum, a) => sum + baseline[a], 0);
+            return v.map(
+              (_, a) =>
+                (1 - s.deviation) * baseline[a] +
+                s.deviation *
+                  (winners.includes(a)
+                    ? winnerMass
+                      ? baseline[a] / winnerMass
+                      : 1 / winners.length
+                    : 0),
+            );
+          },
+          adjustedArena,
+        );
       }
       return values;
     }

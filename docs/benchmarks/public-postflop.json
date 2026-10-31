@@ -1,0 +1,89 @@
+{
+  "inputs": [
+    {
+      "name": "artgto-viewer/ranges/utg/UTG_RFI.txt",
+      "sha256": "367b17e3494d4046a58861f315c64a66a6048f0fe4f2bdddf2c08fb744c83be2",
+      "compatibleHands": 319
+    },
+    {
+      "name": "artgto-viewer/ranges/bb/BB_call_vs_UTG_RFI.txt",
+      "sha256": "15a94cf441a2857b6d1f182e6af6032a6e8dcc8f1ccafe5e0e944127ed812df4",
+      "compatibleHands": 621
+    }
+  ],
+  "game": {
+    "flop": "7c6d2h",
+    "pot": 4,
+    "stack": 1,
+    "heroPosition": "ip",
+    "iterations": 500,
+    "betting": {
+      "flop": {
+        "bet": [
+          25
+        ],
+        "raise": [
+          100
+        ]
+      },
+      "turn": {
+        "bet": [
+          25
+        ],
+        "raise": [
+          100
+        ]
+      },
+      "river": {
+        "bet": [
+          25
+        ],
+        "raise": [
+          100
+        ]
+      }
+    }
+  },
+  "estimate": {
+    "nodes": 21618,
+    "byStreet": [
+      9,
+      441,
+      21168
+    ],
+    "publicBoards": [
+      1,
+      49,
+      2352
+    ],
+    "policyValues": 8309600,
+    "compactPolicyBytes": 66476800,
+    "pairRunouts": 357451380,
+    "withinNodeBudget": true,
+    "withinPolicyBudget": true,
+    "policyValueLimit": 12000000,
+    "nodeLimit": 600000,
+    "bettingStates": 27
+  },
+  "nativeMs": 63560.092800000006,
+  "nativeRunReused": false,
+  "evaluationMs": 65436.401699999995,
+  "nativeGap": -5.1116944e-7,
+  "gap": 0,
+  "packageBytes": 38671835,
+  "trainedHands": 100,
+  "decisions": 138,
+  "streets": [
+    3,
+    4,
+    5
+  ],
+  "memoryAtCompletion": {
+    "rss": 2279665664,
+    "heapTotal": 1826541568,
+    "heapUsed": 1690001520,
+    "external": 368048350,
+    "arrayBuffers": 365572347
+  },
+  "qualification": "Isolated cap-relaxed minimum-tree feasibility using public preflop range inputs. This hypothetical pot 4 bb / remaining stack 1 bb postflop tree is not the source 100 bb preflop game. Source values and solution remain local and are not bundled. Memory snapshots are not process peaks or representative 8 GB qualification. Production caps are unchanged."
+}

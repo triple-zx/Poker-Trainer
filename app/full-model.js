@@ -1,5 +1,6 @@
 import { validate, cardName } from "./engine.js";
 import { fullCandidates } from "./full-sizing.js";
+import { matrixRow } from "./full-matrix.js";
 
 export const actionKey = (a) =>
   a.kind + (a.amount === undefined ? "" : ":" + a.amount);
@@ -87,7 +88,7 @@ export function modelLocks(root, s) {
     const mapped = new Map();
     for (const [combo, row] of Object.entries(rows)) {
       const index = g.villain.findIndex((h) => h.label === combo);
-      if (index < 0 || !node.policy[index])
+      if (index < 0 || !matrixRow(node.policy, index))
         throw Error("Opponent edit uses an unavailable private combination");
       if (
         Object.keys(row).length !== node.actions.length ||

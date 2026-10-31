@@ -2,6 +2,7 @@ import { validate, cardName, RANKS } from "./engine.js";
 import { actionKey } from "./full-model.js";
 import { boardEquity } from "./full-game.js";
 import { summarizeRange } from "./analytics.js";
+import { matrixValue } from "./full-matrix.js";
 
 export function nodePolicy(node, profile) {
   if (profile === "baseline") return node.policy;
@@ -43,12 +44,15 @@ export function nodeReach(result, path = "root", profile = "model") {
       joint = joint.map(
         (w, k) =>
           w *
-          (policy[node.player ? original.pairs[k].j : original.pairs[k].i]?.[
-            a
-          ] || 0),
+          (matrixValue(
+            policy,
+            node.player ? original.pairs[k].j : original.pairs[k].i,
+            a,
+          ) || 0),
       );
       const own = factors[node.player];
-      for (let i = 0; i < own.length; i++) own[i] *= policy[i]?.[a] || 0;
+      for (let i = 0; i < own.length; i++)
+        own[i] *= matrixValue(policy, i, a) || 0;
       const max = Math.max(...own);
       if (max) for (let i = 0; i < own.length; i++) own[i] /= max;
       history.push({ node, choice: a });
@@ -118,7 +122,7 @@ export function analyzeNode(
   const frequencies = policy
     ? node.actions.map((_, a) =>
         (node.player === 0 ? hero : villain).hands.reduce(
-          (sum, h, i) => sum + h.mass * (policy[i]?.[a] || 0),
+          (sum, h, i) => sum + h.mass * (matrixValue(policy, i, a) || 0),
           0,
         ),
       )
