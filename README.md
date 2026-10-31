@@ -4,7 +4,7 @@ A local postflop training and research app. English and Chinese interface. No ac
 
 Switch languages during full-hand practice or a decision drill without restarting the hand. Action history, betting controls, feedback, journal replay and frequency summaries follow the selected language; replay keeps its current step. Saved decisions and scores retain the same canonical data in either language.
 
-Published installers are at [v0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0). The main branch additionally contains portable full-hand solutions, automatic full-hand sizing, opponent tendencies and detailed edits, in-position play, conditional range analysis, saved-flop comparisons, range editing and resumable native solving for the next release; use the developer setup below to run those changes now.
+The [Windows 0.4.0 preview](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.4.0) includes portable full-hand solutions, automatic sizing, opponent tendencies and detailed edits, in-position play, conditional range analysis, saved-flop comparisons, range editing, resumable native solving and compact storage for supported studies of up to 96 combinations per player. [macOS 0.3.0](https://github.com/triple-zx/Poker-Trainer/releases/tag/v0.3.0) remains the older verified build; it does not contain these later additions. See the [0.4.0 release notes](docs/releases/0.4.0.md) for limits and unfinished work.
 
 ## Desktop application
 
@@ -21,6 +21,8 @@ npm start
 ~~~
 
 Create installers with `npm run desktop:dist`. Windows outputs an installer and portable executable; macOS outputs a DMG and ZIP. The package includes the native engine's source archive, patch, build recipe and license. The direct evaluator does not need the large hand dictionary at runtime.
+
+Run `node desktop/verify-package.mjs` after building. It compares packaged app/native source with the working tree, checks the engine hash and version, and launches a hidden temporary profile for a native solve and worker checks. It also accepts the path to an extracted packaged executable, so the final installer/portable payloads can be checked. Stage only the intended versioned downloads in a separate directory, then run `node scripts/verify-release.mjs DIRECTORY VERSION` to require Windows plus a matching macOS DMG/ZIP and write checksums. An explicitly Windows-only preview uses `--windows-only` and must be published as a prerelease identifying the missing macOS update. Do not use that option to claim a complete cross-platform release.
 
 The optional browser preview is a development tool: `npm run preview`. App data uses a stable private app origin in the desktop profile, separate from browser-preview storage. Export/import scenarios when moving between those profiles.
 

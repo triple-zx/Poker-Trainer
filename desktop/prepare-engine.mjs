@@ -85,7 +85,7 @@ if (process.platform === "darwin") {
 }
 await writeFile(
   path.join(stage, "source", "BUILD.md"),
-  `# Corresponding native source\n\nUpstream console commit: ${pin}\n\nExtract texassolver-console.tar.gz into a source folder. Apply texassolver.patch from that folder with git apply. Copy CompatMutex.h and HoldemEvaluator.h into its include folder. Use the CMakeLists.txt supplied beside this document (not the archived original) with -DTEXASSOLVER_SOURCE pointing to the extracted folder. Build Release with a C++17 compiler and OpenMP; target console_solver. The dictionary data is unnecessary for the direct evaluator used in this build.\n\nThe source patch and evaluator are included in full. The app's JavaScript source is distributed unminified in app.asar. The upstream license is included beside the executable and in this directory.\n`,
+  `# Corresponding native source\n\nUpstream console commit: ${pin}\n\nExtract texassolver-console.tar.gz into a source folder. Apply texassolver.patch from that folder with git apply. Copy CompatMutex.h and HoldemEvaluator.h into its include folder. Keep Checkpoint.cpp beside the supplied CMakeLists.txt: it is an additional source file compiled by that recipe. Use this CMakeLists.txt (not the archived original) with -DTEXASSOLVER_SOURCE pointing to the extracted folder. Build Release with a C++17 compiler and OpenMP; target console_solver. The dictionary data is unnecessary for the direct evaluator used in this build.\n\nThe source patch, evaluator and checkpoint implementation are included in full. The app's JavaScript source is distributed unminified in app.asar. The upstream license is included beside the executable and in this directory.\n`,
 );
 await writeFile(
   path.join(stage, "build.json"),

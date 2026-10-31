@@ -231,6 +231,7 @@ else {
             `window.desktopSolver.solve(${JSON.stringify(scenario)}, 'desktop-smoke')`,
           );
           const game = validate(scenario);
+          const nativeCheckpoints = await solver.checkpointSupported();
           const verified = solve(
             scenario,
             [equity(game.hero[0].cards, game.villain[0].cards, game.board)],
@@ -302,6 +303,8 @@ else {
               desktopLoaded: ready,
               native: await solver.available(),
               nativeSolve: verified.gap < 0.001,
+              nativeCheckpoints,
+              version: app.getVersion(),
               packageWorker,
               flopReportWorker,
               ...(checkpointUI ? { checkpointUI } : {}),
@@ -312,7 +315,11 @@ else {
             }),
           );
           app.exit(
-            ready && verified.gap < 0.001 && packageWorker && flopReportWorker
+            ready &&
+              verified.gap < 0.001 &&
+              nativeCheckpoints &&
+              packageWorker &&
+              flopReportWorker
               ? 0
               : 1,
           );
