@@ -3,6 +3,7 @@ import { validateFullModel, modelLocks } from "./full-model.js";
 import { firstPlayer } from "./positions.js";
 import { validateTendencies, opponentPolicy } from "./opponent-tendencies.js";
 import { fullCardContext } from "./full-cards.js";
+import { fullReachContext } from "./full-reach.js";
 import { FULL_POLICY_VALUE_LIMIT } from "./limits.js";
 import {
   validateFullSizing,
@@ -366,10 +367,10 @@ export function boardEquity(h, v, board, cache = new Map()) {
 export function evaluateFull(tree, s, { store = true } = {}) {
   const g = validateFull(s),
     ranges = [g.hero, g.villain],
-    cardContext = fullCardContext(g);
+    cardContext = fullCardContext(g),
+    reachContext = fullReachContext(g, cardContext);
   const modeled = new WeakSet();
   const locks = modelLocks(tree.root, s);
-  const index = (p, player) => (player ? p.j : p.i);
   const policies = (node, model) => {
     if (!model || node.player !== 1) return node.policy;
     if (modeled.has(node)) return node.model;
@@ -386,29 +387,16 @@ export function evaluateFull(tree, s, { store = true } = {}) {
       const values = Array(ranges[player].length).fill(0);
       if (node.type === "terminal") {
         const pot = s.pot + node.spent[0] + node.spent[1];
-        g.pairs.forEach((p, k) => {
-          if (!reach[k]) return;
-          const eq =
-            node.winner >= 0
-              ? +(node.winner === player)
-              : player
-                ? 1 - cardContext.equity(k, node.board)
-                : cardContext.equity(k, node.board);
-          values[index(p, player)] +=
-            reach[k] * (eq * pot - node.spent[player]);
-        });
-        return values;
+        return reachContext.terminal(player, reach, node, pot);
       }
       if (node.type === "chance") {
         for (const [card, child] of Object.entries(node.children)) {
-          const c = Number(card),
-            next = reach.map((r, k) => {
-              const p = g.pairs[k];
-              return g.hero[p.i].cards.includes(c) ||
-                g.villain[p.j].cards.includes(c)
-                ? 0
-                : r / (52 - node.board.length - 4);
-            });
+          const next = reachContext.chance(
+            player,
+            reach,
+            Number(card),
+            node.board.length,
+          );
           const v = walk(child, next);
           v.forEach((x, i) => (values[i] += x));
         }
@@ -417,19 +405,13 @@ export function evaluateFull(tree, s, { store = true } = {}) {
       const policy = policies(node, model);
       if (node.player !== player) {
         node.children.forEach((child, a) => {
-          const v = walk(
-            child,
-            reach.map(
-              (r, k) => r * (policy[index(g.pairs[k], node.player)]?.[a] || 0),
-            ),
-          );
+          const v = walk(child, reachContext.action(reach, policy, a));
           v.forEach((x, i) => (values[i] += x));
         });
         return values;
       }
       const rows = node.children.map((child) => walk(child, reach));
-      const masses = Array(values.length).fill(0);
-      g.pairs.forEach((p, k) => (masses[index(p, player)] += reach[k]));
+      const masses = reachContext.masses(player, reach);
       const ev = values.map((_, i) =>
         masses[i] ? rows.map((row) => row[i] / masses[i]) : null,
       );
@@ -473,10 +455,10 @@ export function evaluateFull(tree, s, { store = true } = {}) {
       }
       return values;
     }
-    return walk(
-      tree.root,
-      g.pairs.map((p) => p.weight),
-    ).reduce((a, b) => a + b, 0);
+    return walk(tree.root, reachContext.initial(player)).reduce(
+      (a, b) => a + b,
+      0,
+    );
   }
   const h = response(0, false, false),
     v = response(1, false, false);

@@ -8,6 +8,9 @@ import os from "node:os";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const baselineRevision = "975a18353c38cc342015c4bb56e52fb16cd770bd";
+// Historical compact-card-table comparison. Factored reach changes summation
+// order; benchmark-reach.mjs checks the current evaluator with numeric bounds.
+const comparisonRevision = "66f2807f9f66609c3f9c78c5021b0c54c67b7f90";
 if (process.argv[2] === "--child") {
   const fixture = JSON.parse(await readFile(process.argv[4], "utf8"));
   const evaluator = await import(pathToFileURL(process.argv[3]));
@@ -62,6 +65,17 @@ if (process.argv[2] === "--child") {
   const fixtures = process.argv.slice(2).length
     ? process.argv.slice(2)
     : [".native/full-sized-scenario.json", ".native/expanded-ranges.json"];
+  const compact = path.join(root, ".native", "evaluation-compact.mjs");
+  const version = spawnSync(
+    "git",
+    ["show", `${comparisonRevision}:app/full-game.js`],
+    { cwd: root, encoding: "utf8", windowsHide: true },
+  );
+  if (version.status !== 0) throw Error(version.stderr);
+  await writeFile(
+    compact,
+    version.stdout.replaceAll('from "./', 'from "../app/'),
+  );
   const rows = [];
   for (const fixture of fixtures) {
     const runs = { before: [], after: [] };
@@ -75,9 +89,7 @@ if (process.argv[2] === "--child") {
             "--expose-gc",
             fileURLToPath(import.meta.url),
             "--child",
-            mode === "before"
-              ? baseline
-              : path.join(root, "app", "full-game.js"),
+            mode === "before" ? baseline : compact,
             path.resolve(root, fixture),
           ],
           {
@@ -126,6 +138,7 @@ if (process.argv[2] === "--child") {
       {
         schema: 1,
         baselineRevision,
+        comparisonRevision,
         node: process.version,
         platform: process.platform,
         arch: process.arch,

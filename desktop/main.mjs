@@ -270,11 +270,18 @@ else {
             checkpointUI = await checkpointSmoke(contents, root);
           }
           let expandedRangeUI = null;
-          if (process.argv.includes("--expanded-range-smoke")) {
+          if (
+            process.argv.includes("--expanded-range-smoke") ||
+            process.argv.includes("--broad-range-smoke")
+          ) {
             const { expandedRangeSmoke } = await import(
               "./expanded-range-smoke.mjs"
             );
-            expandedRangeUI = await expandedRangeSmoke(contents, root);
+            expandedRangeUI = await expandedRangeSmoke(
+              contents,
+              root,
+              process.argv.includes("--broad-range-smoke"),
+            );
           }
           let trainingLanguageUI = null;
           if (process.argv.includes("--training-language-smoke")) {

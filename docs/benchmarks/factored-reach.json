@@ -1,0 +1,330 @@
+{
+  "baselineRevision": "66f2807f9f66609c3f9c78c5021b0c54c67b7f90",
+  "node": "v24.19.0",
+  "platform": "win32",
+  "cpu": "12th Gen Intel(R) Core(TM) i7-12700F",
+  "method": "Three fresh-process evaluation runs per version, alternating order. Identical trees, policies, weights and settings. All numeric result fields checked within 2e-9 relative to max(1, absolute reference), all other fields and selected menus identical. The 96-hand fixture is synthetic, not a native solution; only isolated copies relax the range cap. Memory snapshots are not peak memory or 8 GB qualification.",
+  "rows": [
+    {
+      "fixture": "full-sized-scenario.json",
+      "beforeMedianMs": 611.2907,
+      "afterMedianMs": 692.4793,
+      "runs": {
+        "before": [
+          {
+            "evaluateMs": 613.1047000000001,
+            "memory": {
+              "rss": 370769920,
+              "heapTotal": 312221696,
+              "heapUsed": 189621056,
+              "external": 2325950,
+              "arrayBuffers": 170747
+            },
+            "nodes": 229446,
+            "gap": 0.010176223057286826,
+            "modelEV": 2.7797734146401654,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          },
+          {
+            "evaluateMs": 604.8625999999999,
+            "memory": {
+              "rss": 371552256,
+              "heapTotal": 312483840,
+              "heapUsed": 187841272,
+              "external": 2325950,
+              "arrayBuffers": 170747
+            },
+            "nodes": 229446,
+            "gap": 0.010176223057286826,
+            "modelEV": 2.7797734146401654,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          },
+          {
+            "evaluateMs": 611.2907,
+            "memory": {
+              "rss": 370659328,
+              "heapTotal": 311959552,
+              "heapUsed": 189592064,
+              "external": 2325950,
+              "arrayBuffers": 170747
+            },
+            "nodes": 229446,
+            "gap": 0.010176223057286826,
+            "modelEV": 2.7797734146401654,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          }
+        ],
+        "after": [
+          {
+            "evaluateMs": 672.5418,
+            "memory": {
+              "rss": 370937856,
+              "heapTotal": 312745984,
+              "heapUsed": 214050360,
+              "external": 2325950,
+              "arrayBuffers": 170747
+            },
+            "nodes": 229446,
+            "gap": 0.010176223057286826,
+            "modelEV": 2.7797734146401654,
+            "numbers": 3062721,
+            "maxAbsoluteDifference": 1.2434497875801753e-14,
+            "maxRelativeDifference": 1.9050343769613986e-15
+          },
+          {
+            "evaluateMs": 692.4793,
+            "memory": {
+              "rss": 371249152,
+              "heapTotal": 312483840,
+              "heapUsed": 218976120,
+              "external": 2325950,
+              "arrayBuffers": 170747
+            },
+            "nodes": 229446,
+            "gap": 0.010176223057286826,
+            "modelEV": 2.7797734146401654,
+            "numbers": 3062721,
+            "maxAbsoluteDifference": 1.2434497875801753e-14,
+            "maxRelativeDifference": 1.9050343769613986e-15
+          },
+          {
+            "evaluateMs": 700.1537000000001,
+            "memory": {
+              "rss": 371146752,
+              "heapTotal": 312483840,
+              "heapUsed": 217978264,
+              "external": 2325950,
+              "arrayBuffers": 170747
+            },
+            "nodes": 229446,
+            "gap": 0.010176223057286826,
+            "modelEV": 2.7797734146401654,
+            "numbers": 3062721,
+            "maxAbsoluteDifference": 1.2434497875801753e-14,
+            "maxRelativeDifference": 1.9050343769613986e-15
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "expanded-ranges.json",
+      "beforeMedianMs": 2558.4084000000003,
+      "afterMedianMs": 2161.9315,
+      "runs": {
+        "before": [
+          {
+            "evaluateMs": 2558.4084000000003,
+            "memory": {
+              "rss": 428748800,
+              "heapTotal": 368975872,
+              "heapUsed": 270737728,
+              "external": 2603134,
+              "arrayBuffers": 447931
+            },
+            "nodes": 135996,
+            "gap": 0.0000013118379165177885,
+            "modelEV": 0.6342591647703405,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          },
+          {
+            "evaluateMs": 2597.1161,
+            "memory": {
+              "rss": 429670400,
+              "heapTotal": 368713728,
+              "heapUsed": 275285912,
+              "external": 2603134,
+              "arrayBuffers": 447931
+            },
+            "nodes": 135996,
+            "gap": 0.0000013118379165177885,
+            "modelEV": 0.6342591647703405,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          },
+          {
+            "evaluateMs": 2489.9939000000004,
+            "memory": {
+              "rss": 429019136,
+              "heapTotal": 369500160,
+              "heapUsed": 241209216,
+              "external": 2603134,
+              "arrayBuffers": 447931
+            },
+            "nodes": 135996,
+            "gap": 0.0000013118379165177885,
+            "modelEV": 0.6342591647703405,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          }
+        ],
+        "after": [
+          {
+            "evaluateMs": 2181.6503,
+            "memory": {
+              "rss": 428630016,
+              "heapTotal": 368451584,
+              "heapUsed": 282115576,
+              "external": 2603134,
+              "arrayBuffers": 447931
+            },
+            "nodes": 135996,
+            "gap": 0.0000013118379165177885,
+            "modelEV": 0.6342591647703405,
+            "numbers": 4655212,
+            "maxAbsoluteDifference": 6.217248937900877e-15,
+            "maxRelativeDifference": 2.1287328798076616e-15
+          },
+          {
+            "evaluateMs": 2161.9315,
+            "memory": {
+              "rss": 429146112,
+              "heapTotal": 368713728,
+              "heapUsed": 298611952,
+              "external": 2603134,
+              "arrayBuffers": 447931
+            },
+            "nodes": 135996,
+            "gap": 0.0000013118379165177885,
+            "modelEV": 0.6342591647703405,
+            "numbers": 4655212,
+            "maxAbsoluteDifference": 6.217248937900877e-15,
+            "maxRelativeDifference": 2.1287328798076616e-15
+          },
+          {
+            "evaluateMs": 2152.8691,
+            "memory": {
+              "rss": 428613632,
+              "heapTotal": 368713728,
+              "heapUsed": 283903496,
+              "external": 2603134,
+              "arrayBuffers": 447931
+            },
+            "nodes": 135996,
+            "gap": 0.0000013118379165177885,
+            "modelEV": 0.6342591647703405,
+            "numbers": 4655212,
+            "maxAbsoluteDifference": 6.217248937900877e-15,
+            "maxRelativeDifference": 2.1287328798076616e-15
+          }
+        ]
+      }
+    },
+    {
+      "fixture": "synthetic96.json",
+      "beforeMedianMs": 20941.220599999997,
+      "afterMedianMs": 2149.7241,
+      "runs": {
+        "before": [
+          {
+            "evaluateMs": 20875.502800000002,
+            "memory": {
+              "rss": 432205824,
+              "heapTotal": 367915008,
+              "heapUsed": 269120216,
+              "external": 6925678,
+              "arrayBuffers": 4770475
+            },
+            "nodes": 21618,
+            "gap": 1.2192457916540338,
+            "modelEV": 2.8290932180505477,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          },
+          {
+            "evaluateMs": 20941.220599999997,
+            "memory": {
+              "rss": 431771648,
+              "heapTotal": 367652864,
+              "heapUsed": 272416416,
+              "external": 6925678,
+              "arrayBuffers": 4770475
+            },
+            "nodes": 21618,
+            "gap": 1.2192457916540338,
+            "modelEV": 2.8290932180505477,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          },
+          {
+            "evaluateMs": 21066.4015,
+            "memory": {
+              "rss": 432455680,
+              "heapTotal": 368177152,
+              "heapUsed": 267906544,
+              "external": 6925678,
+              "arrayBuffers": 4770475
+            },
+            "nodes": 21618,
+            "gap": 1.2192457916540338,
+            "modelEV": 2.8290932180505477,
+            "numbers": 0,
+            "maxAbsoluteDifference": 0,
+            "maxRelativeDifference": 0
+          }
+        ],
+        "after": [
+          {
+            "evaluateMs": 2152.6229999999996,
+            "memory": {
+              "rss": 415490048,
+              "heapTotal": 345632768,
+              "heapUsed": 225279832,
+              "external": 7691246,
+              "arrayBuffers": 5536043
+            },
+            "nodes": 21618,
+            "gap": 1.2192457916540338,
+            "modelEV": 2.8290932180505473,
+            "numbers": 4448151,
+            "maxAbsoluteDifference": 1.0658141036401503e-14,
+            "maxRelativeDifference": 3.463373724062347e-15
+          },
+          {
+            "evaluateMs": 2149.7241,
+            "memory": {
+              "rss": 414371840,
+              "heapTotal": 345108480,
+              "heapUsed": 238038264,
+              "external": 8201550,
+              "arrayBuffers": 6046347
+            },
+            "nodes": 21618,
+            "gap": 1.2192457916540338,
+            "modelEV": 2.8290932180505473,
+            "numbers": 4448151,
+            "maxAbsoluteDifference": 1.0658141036401503e-14,
+            "maxRelativeDifference": 3.463373724062347e-15
+          },
+          {
+            "evaluateMs": 2110.4037,
+            "memory": {
+              "rss": 416047104,
+              "heapTotal": 345894912,
+              "heapUsed": 222803368,
+              "external": 7596526,
+              "arrayBuffers": 5441323
+            },
+            "nodes": 21618,
+            "gap": 1.2192457916540338,
+            "modelEV": 2.8290932180505473,
+            "numbers": 4448151,
+            "maxAbsoluteDifference": 1.0658141036401503e-14,
+            "maxRelativeDifference": 3.463373724062347e-15
+          }
+        ]
+      }
+    }
+  ]
+}

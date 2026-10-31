@@ -13,6 +13,7 @@ import path from "node:path";
 import os from "node:os";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const baselineRevision = "e7b3119940f0cce7b8e115a2ba2a517b05ea1abe";
+const comparisonRevision = "66f2807f9f66609c3f9c78c5021b0c54c67b7f90";
 const hash = (value) =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 if (process.argv[2] === "--child") {
@@ -113,6 +114,20 @@ if (process.argv[2] === "--child") {
       .replace('from "../../app/full-cards.js"', 'from "./full-cards.js"');
     await writeFile(path.join(directory, file), source);
   }
+  // Keep the historical bit-identical evaluation comparison isolated from
+  // later changes to evaluation summation order (see benchmark-reach.mjs).
+  const comparison = path.join(root, ".native/coverage-comparison");
+  await mkdir(comparison, { recursive: true });
+  const version = spawnSync(
+    "git",
+    ["show", `${comparisonRevision}:app/full-game.js`],
+    { cwd: root, encoding: "utf8", windowsHide: true },
+  );
+  if (version.status !== 0) throw Error(version.stderr);
+  await writeFile(
+    path.join(comparison, "full-game.js"),
+    version.stdout.replaceAll('from "./', 'from "../../app/'),
+  );
   function child(task, mode, arg) {
     const file = task === "coverage" ? "full-cards.js" : "full-game.js";
     const proc = spawnSync(
@@ -122,7 +137,14 @@ if (process.argv[2] === "--child") {
         fileURLToPath(import.meta.url),
         "--child",
         task,
-        path.join(mode === "before" ? directory : path.join(root, "app"), file),
+        path.join(
+          mode === "before"
+            ? directory
+            : task === "result"
+              ? comparison
+              : path.join(root, "app"),
+          file,
+        ),
         String(arg),
       ],
       {
@@ -185,7 +207,7 @@ if (process.argv[2] === "--child") {
   const limits = await readFile(path.join(study, "limits.js"), "utf8");
   await writeFile(
     path.join(study, "limits.js"),
-    limits.replace("FULL_COMBO_LIMIT = 12", "FULL_COMBO_LIMIT = 1326"),
+    limits.replace(/FULL_COMBO_LIMIT = \d+/, "FULL_COMBO_LIMIT = 1326"),
   );
   const { estimateFullResources } = await import(
     pathToFileURL(path.join(study, "full-resources.js"))
@@ -250,6 +272,7 @@ if (process.argv[2] === "--child") {
   }
   const report = {
     baselineRevision,
+    comparisonRevision,
     node: process.version,
     platform: process.platform,
     cpu: os.cpus()[0].model,
