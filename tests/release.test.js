@@ -18,10 +18,10 @@ test("release packaging requires both platforms and hashes only expected version
     assert.ok(path.basename(directory).startsWith("poker-release-test-"));
     await rm(directory, { recursive: true, force: true });
   });
-  const run = () =>
+  const run = (...options) =>
     spawnSync(
       process.execPath,
-      ["scripts/verify-release.mjs", directory, "0.3.0"],
+      ["scripts/verify-release.mjs", directory, "0.3.0", ...options],
       { encoding: "utf8", windowsHide: true },
     );
   assert.notEqual(run().status, 0);
@@ -32,8 +32,29 @@ test("release packaging requires both platforms and hashes only expected version
     "mac-arm64.dmg",
     "mac-arm64.zip",
   ].map((x) => "Poker-Trainer-0.3.0-" + x);
+  await writeFile(path.join(directory, names[0]), payload);
+  assert.notEqual(run("--windows-only").status, 0);
+  await writeFile(path.join(directory, names[1]), payload);
+  assert.notEqual(run().status, 0, "Default gate still requires macOS");
+  assert.equal(run("--windows-only").status, 0);
+  assert.equal(
+    run("--windows-only").status,
+    0,
+    "Checksum generation is repeatable",
+  );
+  assert.notEqual(run("--skip-validation").status, 0);
+  assert.notEqual(run("--windows-only", "extra").status, 0);
+  await writeFile(path.join(directory, names[1]), Buffer.alloc(100));
+  assert.match(run("--windows-only").stderr, /truncated desktop package/);
   for (const name of names)
     await writeFile(path.join(directory, name), payload);
+  assert.match(run("--windows-only").stderr, /Unexpected release asset/);
+  await rm(path.join(directory, names[3]));
+  const wrongArch = "Poker-Trainer-0.3.0-mac-x64.zip";
+  await writeFile(path.join(directory, wrongArch), payload);
+  assert.notEqual(run().status, 0, "macOS pair must match architecture");
+  await rm(path.join(directory, wrongArch));
+  await writeFile(path.join(directory, names[3]), payload);
   const good = run();
   assert.equal(good.status, 0, good.stderr);
   const checksums = await readFile(
