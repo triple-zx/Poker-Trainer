@@ -2,7 +2,7 @@
   {
     "file": ".native/full-sized-scenario.json",
     "nativeSolves": 0,
-    "preflightMs": 3.7804999999999893,
+    "preflightMs": 5.128600000000006,
     "estimate": {
       "nodes": 229446,
       "byStreet": [
@@ -19,6 +19,8 @@
       "compactPolicyBytes": 2383232,
       "pairRunouts": 3960,
       "withinNodeBudget": true,
+      "withinPolicyBudget": true,
+      "policyValueLimit": 2400000,
       "nodeLimit": 600000,
       "bettingStates": 135
     },
@@ -34,7 +36,7 @@
   {
     "file": ".native/full-hand-ip-v3.json",
     "nativeSolves": 0,
-    "preflightMs": 1.109800000000007,
+    "preflightMs": 2.456700000000012,
     "estimate": {
       "nodes": 114636,
       "byStreet": [
@@ -51,6 +53,8 @@
       "compactPolicyBytes": 836800,
       "pairRunouts": 1980,
       "withinNodeBudget": true,
+      "withinPolicyBudget": true,
+      "policyValueLimit": 2400000,
       "nodeLimit": 600000,
       "bettingStates": 81
     },
