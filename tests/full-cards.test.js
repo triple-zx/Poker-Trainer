@@ -63,6 +63,30 @@ test("compact card tables match independent exact equity on every turn and river
   assert.equal(fullCardContext(royal).equity(0, cards("QhJhTh2c3d")), 1);
 });
 
+test("later-street equity allocates only requested turn columns and no unused flop table", () => {
+  const g = validate({ ...DEFAULT, hero: "AhKh,QhQd", villain: "QcQs,JhTh" });
+  const context = fullCardContext(g),
+    turn = [...g.board, ...cards("2c")],
+    river = [...turn, ...cards("3d")],
+    rankBytes = 4 * 2704 * 4;
+  assert.equal(context.numericBytes, 0);
+  assert.equal(
+    context.equity(0, river),
+    boardEquity(g.hero[0].cards, g.villain[0].cards, river),
+  );
+  assert.equal(context.numericBytes, rankBytes, "River allocates ranks only");
+  context.equity(0, turn);
+  assert.equal(context.numericBytes, rankBytes + g.pairs.length * 8);
+  context.equity(1, turn);
+  assert.equal(
+    context.numericBytes,
+    rankBytes + g.pairs.length * 8,
+    "Reuse one turn column",
+  );
+  context.equity(0, [...g.board, ...cards("3d")]);
+  assert.equal(context.numericBytes, rankBytes + g.pairs.length * 16);
+});
+
 test("full-hand application preserves weighted families and enforces hand and total strategy capacities", () => {
   const source = rangeDocument({
     type: "poker-trainer-range",
