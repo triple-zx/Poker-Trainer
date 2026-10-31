@@ -12,6 +12,9 @@ import path from "node:path";
 import os from "node:os";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const baselineRevision = "66f2807f9f66609c3f9c78c5021b0c54c67b7f90";
+// Historical reach comparison. Current storage is checked after unpacking by
+// benchmark-matrices.mjs, including bit-identical result hashes and transfers.
+const comparisonRevision = "481ec0b10fd4933dba62caa70855db5b7ae259ea";
 const work = path.join(root, ".native/reach-benchmark");
 if (process.argv[2] === "--child") {
   const [mode, moduleFile, fixtureFile, oracleFile] = process.argv.slice(3);
@@ -77,14 +80,19 @@ if (process.argv[2] === "--child") {
           path.join(root, "app", file),
           path.join(directory, file),
         );
-    if (mode === "before") {
+    for (const file of mode === "before"
+      ? ["full-game.js"]
+      : ["full-game.js", "full-reach.js"]) {
       const old = spawnSync(
         "git",
-        ["show", `${baselineRevision}:app/full-game.js`],
+        [
+          "show",
+          `${mode === "before" ? baselineRevision : comparisonRevision}:app/${file}`,
+        ],
         { cwd: root, encoding: "utf8", windowsHide: true },
       );
       if (old.status) throw Error(old.stderr);
-      await writeFile(path.join(directory, "full-game.js"), old.stdout);
+      await writeFile(path.join(directory, file), old.stdout);
     }
     // Isolated scalability experiment only; production range limits unchanged.
     const limitsFile = path.join(directory, "limits.js");
@@ -224,6 +232,7 @@ if (process.argv[2] === "--child") {
     JSON.stringify(
       {
         baselineRevision,
+        comparisonRevision,
         node: process.version,
         platform: process.platform,
         cpu: os.cpus()[0].model,

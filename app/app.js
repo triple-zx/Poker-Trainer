@@ -1,3 +1,4 @@
+import { matrixRow } from "./full-matrix.js";
 import { engineInfo, nativeSolve } from "./runtime.js";
 import { practiceGroups, recordActions } from "./analytics.js";
 import { equityReport, frequencyReport, replayHand } from "./analytics-ui.js";
@@ -990,8 +991,23 @@ function analysis() {
     g = validate(s);
   if (result.full) {
     el.innerHTML =
-      `<div class="report"><h2>${esc(s.name)}</h2><p>Flop → turn → river · ${result.nodes.toLocaleString()} verified nodes · ${result.coverage.toLocaleString()} compatible ordered runouts</p><p class="metric">${result.gap.toFixed(5)} bb</p><p>Independently measured baseline Nash gap within the configured tree. Every offered action has an evaluated continuation. EV loss uses the best continuation against the fixed opponent model. Untested sizes and trees with more raises remain outside this comparison.</p><p>Calling tendency preserves the relative weights of non-call actions. Detailed opponent edits replace the complete action distribution for one combination at one decision. The deviation slider blends the baseline with the best response; it is not a robustness guarantee.</p>${result.root.player === 1 ? `<p>${t("You are in position. The opponent acts first; explore their action to inspect your response EVs.", "玩家有位置，对手先行动；选择对手动作以查看回应 EV。")} ${t("Range best-response EV against this model", "对此模型的范围最佳回应 EV")}: ${result.modelEV.toFixed(4)} bb</p>` : ""}${result.root.player === 0 ? `<table><thead><tr><th>Hero</th><th>Root action EVs</th></tr></thead><tbody>${g.hero.map((h, i) => `<tr><td>${h.label}</td><td>${result.root.ev?.[i]?.map((v, a) => `${esc(result.root.actions[a].kind)}${result.root.actions[a].amount ? " " + result.root.actions[a].amount + " bb" : ""}: ${v.toFixed(4)}`).join(" · ") || "No compatible deals"}</td></tr>`).join("")}</tbody></table>` : ""}</div>` +
-      equityReport(g, result.eq, t, esc);
+      `<div class="report"><h2>${esc(s.name)}</h2><p>Flop → turn → river · ${result.nodes.toLocaleString()} verified nodes · ${result.coverage.toLocaleString()} compatible ordered runouts</p><p class="metric">${result.gap.toFixed(5)} bb</p><p>Independently measured baseline Nash gap within the configured tree. Every offered action has an evaluated continuation. EV loss uses the best continuation against the fixed opponent model. Untested sizes and trees with more raises remain outside this comparison.</p><p>Calling tendency preserves the relative weights of non-call actions. Detailed opponent edits replace the complete action distribution for one combination at one decision. The deviation slider blends the baseline with the best response; it is not a robustness guarantee.</p>${result.root.player === 1 ? `<p>${t("You are in position. The opponent acts first; explore their action to inspect your response EVs.", "玩家有位置，对手先行动；选择对手动作以查看回应 EV。")} ${t("Range best-response EV against this model", "对此模型的范围最佳回应 EV")}: ${result.modelEV.toFixed(4)} bb</p>` : ""}${
+        result.root.player === 0
+          ? `<table><thead><tr><th>Hero</th><th>Root action EVs</th></tr></thead><tbody>${g.hero
+              .map(
+                (h, i) =>
+                  `<tr><td>${h.label}</td><td>${
+                    matrixRow(result.root.ev, i)
+                      ?.map(
+                        (v, a) =>
+                          `${esc(result.root.actions[a].kind)}${result.root.actions[a].amount ? " " + result.root.actions[a].amount + " bb" : ""}: ${v.toFixed(4)}`,
+                      )
+                      .join(" · ") || "No compatible deals"
+                  }</td></tr>`,
+              )
+              .join("")}</tbody></table>`
+          : ""
+      }</div>` + equityReport(g, result.eq, t, esc);
     el.insertAdjacentHTML(
       "beforeend",
       `<details class="report"><summary>${t("Range matrices", "范围矩阵")}</summary><h3>${t("You", "玩家")}</h3>${matrix(g.hero)}<h3>${t("Opponent", "对手")}</h3>${matrix(g.villain)}</details>`,

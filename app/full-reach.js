@@ -1,3 +1,4 @@
+import { matrixValue } from "./full-matrix.js";
 // Counterfactual reach for independent starting ranges factors into own hand
 // weight, opponent hand/action weight, and a public chance/normalization scalar.
 // Card collisions are excluded when summing, never treated as independent deals.
@@ -167,7 +168,9 @@ export function fullReachContext(g, cardContext) {
     action(reach, policy, action) {
       return {
         ...reach,
-        other: reach.other.map((w, i) => w * (policy[i]?.[action] || 0)),
+        other: reach.other.map(
+          (w, i) => w * (matrixValue(policy, i, action) || 0),
+        ),
       };
     },
     masses,

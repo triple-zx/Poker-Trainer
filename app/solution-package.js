@@ -3,6 +3,7 @@ import { validateRangeOrigins, rangeDocument } from "./preflop-ranges.js";
 import { convertFull, evaluateFull, validateFull } from "./full-game.js";
 import { modelBasis } from "./full-model.js";
 import { validateTendencies } from "./opponent-tendencies.js";
+import { matrixRows } from "./full-matrix.js";
 
 export const PACKAGE_LIMIT = 128 * 1024 * 1024;
 const scenarioFields = [
@@ -93,7 +94,7 @@ export function solutionPackage(result) {
       actions: node.actions.map(({ kind, amount }) =>
         amount === undefined ? { kind } : { kind, amount },
       ),
-      policy: node.policy.map((row) => (row ? [...row] : null)),
+      policy: matrixRows(node.policy).map((row) => (row ? [...row] : null)),
       children: node.children.map(pack),
     };
   }

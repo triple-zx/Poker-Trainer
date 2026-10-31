@@ -1,18 +1,21 @@
 import { validate, equity, solve } from "./engine.js";
 import { solveSized } from "./sizing.js";
 import { convertFull, evaluateFull } from "./full-game.js";
+import { matrixTransfers } from "./full-matrix.js";
 self.onmessage = ({ data }) => {
   try {
     if (data.scenario.game === "full") {
       if (!data.nativeProfile?.full)
         throw Error("Full-hand training requires the native engine");
-      self.postMessage({
-        type: "result",
-        result: evaluateFull(
-          convertFull(data.nativeProfile.raw, data.scenario),
-          data.scenario,
-        ),
-      });
+      const tree = convertFull(data.nativeProfile.raw, data.scenario);
+      // This worker owns its cloned native export; drop it before evaluating
+      // the validated tree so both large representations need not stay live.
+      data.nativeProfile.raw = null;
+      const result = evaluateFull(tree, data.scenario);
+      self.postMessage(
+        { type: "result", result },
+        matrixTransfers(result.root),
+      );
       return;
     }
     const g = validate(data.scenario),
