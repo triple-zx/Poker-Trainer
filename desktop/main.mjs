@@ -61,6 +61,11 @@ else {
         process.env.TEXASSOLVER_RESOURCES = path.join(nativeRoot, "resources");
       }
       const solver = await import("../native/adapter.mjs");
+      const { savedCheckpoint } = await import("../native/checkpoint-job.mjs");
+      const checkpointDirectory = path.join(
+        app.getPath("userData"),
+        "solver-job",
+      );
       const trusted = (event) => {
         if (
           !event.senderFrame ||
@@ -70,24 +75,67 @@ else {
       };
       ipcMain.handle("solver:available", async (event) => {
         trusted(event);
-        return { native: await solver.available() };
+        return {
+          native: await solver.available(),
+          checkpoints: await solver.checkpointSupported(),
+        };
       });
-      ipcMain.handle("solver:solve", async (event, scenario, id) => {
+      ipcMain.handle("solver:checkpoint", async (event) => {
         trusted(event);
-        if (
-          typeof id !== "string" ||
-          id.length > 80 ||
-          JSON.stringify(scenario).length > 64000
-        )
-          throw Error("Invalid solve request");
-        if (jobs.size) throw Error("Solver is busy");
-        const job = { id, abort: new AbortController() };
-        jobs.set(event.sender.id, job);
-        try {
-          return await solver.run(scenario, job.abort.signal);
-        } finally {
-          jobs.delete(event.sender.id);
-        }
+        const saved = await savedCheckpoint(checkpointDirectory);
+        return saved ? { scenario: saved.scenario } : null;
+      });
+      ipcMain.handle(
+        "solver:solve",
+        async (event, scenario, id, options = {}) => {
+          trusted(event);
+          if (
+            typeof id !== "string" ||
+            id.length > 80 ||
+            JSON.stringify(scenario).length > 64000
+          )
+            throw Error("Invalid solve request");
+          if (
+            !options ||
+            typeof options !== "object" ||
+            Object.keys(options).some(
+              (key) => !["checkpoint", "resume"].includes(key),
+            ) ||
+            Object.values(options).some((value) => typeof value !== "boolean")
+          )
+            throw Error("Invalid checkpoint options");
+          if (jobs.size) throw Error("Solver is busy");
+          const job = {
+            id,
+            abort: new AbortController(),
+            pause: new AbortController(),
+          };
+          jobs.set(event.sender.id, job);
+          try {
+            return await solver.run(
+              scenario,
+              job.abort.signal,
+              options.checkpoint
+                ? {
+                    checkpointDirectory,
+                    resume: options.resume,
+                    pauseSignal: job.pause.signal,
+                    onProgress: (progress) => {
+                      if (!event.sender.isDestroyed())
+                        event.sender.send("solver:progress", id, progress);
+                    },
+                  }
+                : {},
+            );
+          } finally {
+            jobs.delete(event.sender.id);
+          }
+        },
+      );
+      ipcMain.handle("solver:pause", (event, id) => {
+        trusted(event);
+        const job = jobs.get(event.sender.id);
+        if (job?.id === id) job.pause.abort();
       });
       ipcMain.handle("solver:cancel", (event, id) => {
         trusted(event);
@@ -215,6 +263,11 @@ else {
             };
             worker.postMessage({profile:'baseline', weightMode:'equal', entries:[{name:'smoke-a'}, {name:'smoke-b'}]});
           })`);
+          let checkpointUI = null;
+          if (process.argv.includes("--checkpoint-smoke")) {
+            const { checkpointSmoke } = await import("./checkpoint-smoke.mjs");
+            checkpointUI = await checkpointSmoke(contents, root);
+          }
           console.log(
             JSON.stringify({
               desktopLoaded: ready,
@@ -222,6 +275,7 @@ else {
               nativeSolve: verified.gap < 0.001,
               packageWorker,
               flopReportWorker,
+              ...(checkpointUI ? { checkpointUI } : {}),
               url: contents.getURL(),
             }),
           );

@@ -47,6 +47,7 @@ for (const name of [
   "texassolver.patch",
   "CompatMutex.h",
   "HoldemEvaluator.h",
+  "Checkpoint.cpp",
   "CMakeLists.txt",
   "TEXASSOLVER-LICENSE",
 ])

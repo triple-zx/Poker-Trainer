@@ -68,6 +68,8 @@ let packageJob = null;
 let fullModel = null,
   cachedBaseline = null;
 let rangeOrigins = null;
+let nativeCheckpoints = false,
+  nativePause = null;
 let explorerPath = "root";
 const t = (en, zh) => (lang === "en" ? en : zh);
 const msg = (en, zh = en) => ($("#status").textContent = t(en, zh));
@@ -353,6 +355,7 @@ async function start(s, resume = false) {
   refreshActions();
   jobScenario = structuredClone(s);
   if (!resume) checkpoint = [];
+  save();
   $("#compute").disabled = true;
   $("#pause").disabled = false;
   $("#resume").disabled = true;
@@ -360,18 +363,45 @@ async function start(s, resume = false) {
   let nativeProfile = null;
   if (s.engine === "native") {
     controller = new AbortController();
+    nativePause = nativeCheckpoints ? new AbortController() : null;
+    let nativeProgress = null;
     msg("TexasSolver is computing the baseline…", "TexasSolver 正在计算基线…");
     const started = Date.now(),
       tick = setInterval(() => {
-        if (token === runId)
+        if (token === runId && !nativeProgress)
           msg(
-            `Computing ${s.game === "full" ? "flop, turn and river" : "the baseline"} · ${Math.floor((Date.now() - started) / 1000)} seconds elapsed. You can stop and restart this run.`,
-            `正在计算 · 已用时 ${Math.floor((Date.now() - started) / 1000)} 秒。可停止并重新开始。`,
+            `Computing ${s.game === "full" ? "flop, turn and river" : "the baseline"} · ${Math.floor((Date.now() - started) / 1000)} seconds elapsed. ${nativeCheckpoints ? "Preparing saved solver progress…" : "This engine can stop and restart; iteration checkpoints require the updated desktop engine."}`,
+            `正在计算 · 已用时 ${Math.floor((Date.now() - started) / 1000)} 秒。${nativeCheckpoints ? "正在准备保存求解进度…" : "当前引擎只能停止并重新开始；迭代检查点需要新版桌面引擎。"}`,
           );
       }, 1000);
     try {
-      const data = await nativeSolve(s, controller.signal);
+      const data = await nativeSolve(s, controller.signal, {
+        checkpoint: nativeCheckpoints,
+        resume,
+        pauseSignal: nativePause?.signal,
+        onProgress: (progress) => {
+          if (token !== runId) return;
+          nativeProgress = progress;
+          $("#progress").max = progress.target;
+          $("#progress").value = progress.iteration;
+          msg(
+            `Solver iteration ${progress.iteration}/${progress.target} · saved through ${progress.saved}. ${nativePause?.signal.aborted ? "Pausing after this iteration…" : "You can pause and resume; progress is also saved every 100 iterations."}`,
+            `求解迭代 ${progress.iteration}/${progress.target} · 已保存至 ${progress.saved}。${nativePause?.signal.aborted ? "将在本次迭代后暂停…" : "可暂停和继续；每 100 次迭代自动保存。"}`,
+          );
+        },
+      });
       if (token !== runId) return;
+      const pauseRequested = nativePause?.signal.aborted;
+      nativePause = null;
+      if (data.paused || (pauseRequested && data.progress)) {
+        stop();
+        save();
+        msg(
+          `Paused at iteration ${data.progress.saved}. Resume continues this saved computation, including after reopening the app.`,
+          `已在第 ${data.progress.saved} 次迭代保存并暂停。可继续此计算，重新打开应用后也可恢复。`,
+        );
+        return;
+      }
       nativeProfile = data;
     } catch (e) {
       if (token === runId) {
@@ -432,6 +462,7 @@ function stop() {
   runId++;
   controller?.abort();
   controller = null;
+  nativePause = null;
   worker?.terminate();
   worker = null;
   packageJob = null;
@@ -464,6 +495,15 @@ form.onsubmit = (e) => {
   }
 };
 $("#pause").onclick = () => {
+  if (nativePause) {
+    nativePause.abort();
+    $("#pause").disabled = true;
+    msg(
+      "Finishing this iteration and saving solver progress…",
+      "正在完成本次迭代并保存求解进度…",
+    );
+    return;
+  }
   if (packageJob) {
     stop();
     analysis();
@@ -477,10 +517,14 @@ $("#pause").onclick = () => {
   save();
   msg(
     jobScenario?.game === "full"
-      ? "Stopped. Resume restarts full-tree precomputation; no native iteration checkpoint is saved."
+      ? nativeCheckpoints
+        ? "Evaluation stopped. Resume reloads the saved native baseline and restarts decision evaluation."
+        : "Stopped. Resume restarts full-tree precomputation; no native iteration checkpoint is saved."
       : "Paused. Completed hand pairs are saved; resume continues from the last pair.",
     jobScenario?.game === "full"
-      ? "已停止。继续将重新计算完整树，不保留原生迭代检查点。"
+      ? nativeCheckpoints
+        ? "已停止评估。继续将加载原生基线检查点并重新评估决策。"
+        : "已停止。继续将重新计算完整树，不保留原生迭代检查点。"
       : "已暂停。已完成的手牌对已保存，可继续计算。",
   );
 };
@@ -488,6 +532,48 @@ $("#resume").onclick = () => {
   if (jobScenario) {
     fill(jobScenario);
     start(jobScenario, true);
+  }
+};
+$("#restore-native-job").onclick = async () => {
+  try {
+    if (hand || worker || controller || packageJob)
+      throw Error(
+        t(
+          "Finish the hand or current operation first.",
+          "请先完成本手或当前操作。",
+        ),
+      );
+    const saved = await window.desktopSolver.checkpoint();
+    if (hand || worker || controller || packageJob)
+      throw Error(
+        t(
+          "Finish the hand or current operation first.",
+          "请先完成本手或当前操作。",
+        ),
+      );
+    if (!saved)
+      throw Error(
+        t("No native checkpoint is saved yet.", "尚未保存原生求解检查点。"),
+      );
+    validate(saved.scenario);
+    if (saved.scenario.game === "full") validateFull(saved.scenario);
+    stop();
+    fullTraining?.cancel();
+    fullTraining = null;
+    result = null;
+    cachedBaseline = null;
+    jobScenario = saved.scenario;
+    checkpoint = [];
+    fill(jobScenario);
+    save();
+    refreshActions();
+    $("#resume").disabled = false;
+    msg(
+      "Saved job restored. Choose Resume checkpoint to continue; compatibility is checked before loading solver state.",
+      "已恢复保存的任务。点击继续计算即可恢复；加载求解状态前将验证兼容性。",
+    );
+  } catch (error) {
+    msg(error.message);
   }
 };
 form.addEventListener("input", (e) => {
@@ -1057,6 +1143,8 @@ if (jobScenario?.game === "full") {
 
 engineInfo()
   .then((info) => {
+    nativeCheckpoints = !!info.checkpoints;
+    $("#restore-native-job").hidden = !nativeCheckpoints;
     if (!jobScenario && info.native) $("#engine").value = "native";
     if (!info.native)
       $("#engine").querySelector('[value="native"]').disabled = true;

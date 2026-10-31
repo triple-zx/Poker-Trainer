@@ -15,7 +15,7 @@ foreach(directory src src/compairer src/nodes src/ranges src/tools src/trainable
   list(APPEND solver_sources ${directory_sources})
 endforeach()
 list(REMOVE_ITEM solver_sources "${TEXASSOLVER_SOURCE}/src/console.cpp")
-add_library(TexasSolver STATIC ${solver_sources})
+add_library(TexasSolver STATIC ${solver_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Checkpoint.cpp")
 target_include_directories(TexasSolver PUBLIC "${TEXASSOLVER_SOURCE}/include")
 target_link_libraries(TexasSolver PUBLIC fmt OpenMP::OpenMP_CXX)
 add_executable(console_solver "${TEXASSOLVER_SOURCE}/src/console.cpp")
